@@ -1,4 +1,4 @@
-// Tactical arsenal: 4 distinct 3D procedural firearms + combat blade, stats, ADS zoom, recoil & spread.
+// Tactical arsenal: 5 detailed 3D procedural firearms + combat blade, holo optics, ADS zoom, recoil & spread.
 import * as THREE from 'three';
 import { PALETTE } from './palette.js';
 
@@ -123,11 +123,13 @@ export const WEAPONS = {
 };
 
 export function createWeaponRig(camera) {
-  const darkMetal = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE.steelDark), roughness: 0.52, metalness: 0.55 });
-  const lightMetal = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE.steel), roughness: 0.42, metalness: 0.6 });
-  const polymer = new THREE.MeshStandardMaterial({ color: new THREE.Color('#202630'), roughness: 0.78, metalness: 0.12 });
-  const accentMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.vanguard) });
-  const bladeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color('#cbd5e1'), roughness: 0.25, metalness: 0.88 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: new THREE.Color('#2d3748'), roughness: 0.42, metalness: 0.58 });
+  const gunmetal = new THREE.MeshStandardMaterial({ color: new THREE.Color('#64748b'), roughness: 0.32, metalness: 0.65 });
+  const polymer = new THREE.MeshStandardMaterial({ color: new THREE.Color('#1e2633'), roughness: 0.72, metalness: 0.16 });
+  const accentCyan = new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.vanguard) });
+  const accentAmber = new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.accent) });
+  const opticGlass = new THREE.MeshBasicMaterial({ color: new THREE.Color('#0ea5e9'), transparent: true, opacity: 0.16, side: THREE.DoubleSide });
+  const bladeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color('#d6e0ea'), roughness: 0.22, metalness: 0.9 });
 
   const rig = new THREE.Group();
   rig.position.set(0.24, -0.21, -0.44);
@@ -141,57 +143,80 @@ export function createWeaponRig(camera) {
     return m;
   }
 
-  // 1. Pistol
+  // 1. VX-9 Pistol
   const pistol = new THREE.Group();
   pistol.add(
-    part(0.052, 0.06, 0.26, 0, 0.02, -0.04, darkMetal),
-    part(0.044, 0.11, 0.06, 0, -0.055, 0.05, polymer),
-    part(0.014, 0.014, 0.02, 0, 0.056, -0.15, accentMat),
+    part(0.052, 0.052, 0.27, 0, 0.032, -0.05, gunmetal),
+    part(0.048, 0.025, 0.24, 0, -0.004, -0.04, darkMetal),
+    part(0.044, 0.115, 0.062, 0, -0.065, 0.045, polymer),
+    part(0.014, 0.014, 0.018, 0, 0.064, -0.16, accentCyan),
   );
   models.pistol = pistol;
 
-  // 1b. Heavy Sidearm (Viper .44)
+  // 1b. Viper .44 Magnum
   const deagle = new THREE.Group();
   deagle.add(
-    part(0.058, 0.068, 0.31, 0, 0.024, -0.06, lightMetal),
-    part(0.048, 0.115, 0.064, 0, -0.055, 0.05, polymer),
-    part(0.016, 0.016, 0.022, 0, 0.064, -0.19, new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.accent) })),
+    part(0.058, 0.064, 0.32, 0, 0.032, -0.07, gunmetal),
+    part(0.048, 0.026, 0.28, 0, -0.008, -0.05, darkMetal),
+    part(0.048, 0.12, 0.066, 0, -0.068, 0.05, polymer),
+    part(0.016, 0.016, 0.022, 0, 0.07, -0.2, accentAmber),
   );
   models.deagle = deagle;
 
-  // 2. SMG
+  // 2. Kestrel MP-7 SMG
   const smg = new THREE.Group();
   smg.add(
-    part(0.072, 0.09, 0.34, 0, 0.01, -0.02, polymer),
-    part(0.036, 0.036, 0.24, 0, 0.02, -0.28, darkMetal),
-    part(0.036, 0.13, 0.045, 0, -0.08, -0.1, darkMetal),
+    part(0.074, 0.088, 0.34, 0, 0.01, -0.02, polymer),
+    part(0.066, 0.024, 0.28, 0, 0.062, -0.04, gunmetal),
+    part(0.04, 0.04, 0.24, 0, 0.02, -0.29, darkMetal),
+    part(0.034, 0.135, 0.044, 0, -0.085, -0.11, gunmetal),
     part(0.042, 0.1, 0.055, 0, -0.075, 0.08, polymer),
-    part(0.024, 0.022, 0.03, 0, 0.065, 0, accentMat),
+    part(0.042, 0.036, 0.07, 0, 0.09, -0.02, darkMetal),
+    part(0.028, 0.024, 0.004, 0, 0.09, -0.02, opticGlass),
+    part(0.008, 0.008, 0.008, 0, 0.09, -0.02, accentCyan),
   );
   models.smg = smg;
 
-  // 3. Assault Rifle
+  // 3. Vanguard AR-47 Rifle (styled receiver, handguard shroud, optic hood, foregrip & brake)
   const rifle = new THREE.Group();
+  const mag = part(0.044, 0.155, 0.068, 0, -0.11, -0.07, darkMetal);
+  mag.rotation.x = 0.2;
+  const foregrip = part(0.036, 0.09, 0.042, 0, -0.078, -0.27, polymer);
+  foregrip.rotation.x = -0.18;
   rifle.add(
-    part(0.082, 0.095, 0.44, 0, 0.005, 0, darkMetal),
-    part(0.042, 0.042, 0.42, 0, 0.025, -0.39, lightMetal),
-    part(0.068, 0.085, 0.24, 0, -0.015, 0.31, polymer),
-    part(0.046, 0.15, 0.07, 0, -0.1, -0.06, polymer),
-    part(0.05, 0.04, 0.09, 0, 0.07, -0.02, darkMetal),
-    part(0.018, 0.016, 0.015, 0, 0.075, -0.02, accentMat),
+    part(0.078, 0.072, 0.42, 0, 0.018, -0.01, gunmetal),
+    part(0.072, 0.042, 0.38, 0, -0.034, 0.01, polymer),
+    part(0.056, 0.02, 0.46, 0, 0.062, -0.06, darkMetal),
+    part(0.068, 0.066, 0.26, 0, 0.018, -0.31, darkMetal),
+    part(0.072, 0.014, 0.24, 0, 0.034, -0.31, gunmetal),
+    part(0.082, 0.008, 0.34, 0, 0.002, -0.14, accentCyan),
+    part(0.032, 0.032, 0.25, 0, 0.024, -0.5, gunmetal),
+    part(0.044, 0.044, 0.055, 0, 0.024, -0.62, darkMetal),
+    part(0.064, 0.088, 0.24, 0, -0.014, 0.3, polymer),
+    part(0.052, 0.018, 0.025, 0.048, 0.032, -0.06, accentAmber),
+    // Holo Sight Assembly
+    part(0.056, 0.016, 0.09, 0, 0.08, -0.02, darkMetal),
+    part(0.012, 0.044, 0.085, -0.022, 0.105, -0.02, gunmetal),
+    part(0.012, 0.044, 0.085, 0.022, 0.105, -0.02, gunmetal),
+    part(0.056, 0.01, 0.085, 0, 0.128, -0.02, gunmetal),
+    part(0.034, 0.034, 0.004, 0, 0.105, -0.02, opticGlass),
+    part(0.008, 0.008, 0.008, 0, 0.105, -0.02, accentCyan),
+    mag,
+    foregrip,
   );
   models.rifle = rifle;
 
-  // 4. Sniper Rifle
+  // 4. Helios M90 Sniper
   const sniper = new THREE.Group();
-  const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.028, 0.3, 12), darkMetal);
+  const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.028, 0.32, 12), darkMetal);
   scopeTube.rotation.x = Math.PI * 0.5;
-  scopeTube.position.set(0, 0.088, -0.04);
+  scopeTube.position.set(0, 0.095, -0.04);
   sniper.add(
-    part(0.078, 0.09, 0.48, 0, 0, 0.02, polymer),
-    part(0.032, 0.032, 0.62, 0, 0.026, -0.48, lightMetal),
-    part(0.058, 0.048, 0.06, 0, 0.026, -0.8, darkMetal),
+    part(0.076, 0.09, 0.48, 0, 0, 0.02, polymer),
+    part(0.034, 0.034, 0.62, 0, 0.026, -0.48, gunmetal),
+    part(0.058, 0.048, 0.065, 0, 0.026, -0.8, darkMetal),
     part(0.068, 0.09, 0.26, 0, -0.015, 0.34, polymer),
+    part(0.014, 0.014, 0.06, 0.045, 0.03, -0.08, accentCyan),
     scopeTube,
   );
   models.sniper = sniper;
@@ -214,10 +239,10 @@ export function createWeaponRig(camera) {
     canvas.width = 128;
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 58);
+    const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 56);
     grad.addColorStop(0, 'rgba(255, 252, 232, 1)');
-    grad.addColorStop(0.22, 'rgba(255, 210, 115, 0.92)');
-    grad.addColorStop(0.52, 'rgba(245, 166, 35, 0.36)');
+    grad.addColorStop(0.22, 'rgba(255, 210, 115, 0.9)');
+    grad.addColorStop(0.5, 'rgba(245, 166, 35, 0.32)');
     grad.addColorStop(1, 'rgba(245, 166, 35, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 128, 128);
@@ -226,11 +251,11 @@ export function createWeaponRig(camera) {
     ctx.translate(64, 64);
     for (let i = 0; i < 6; i += 1) {
       ctx.rotate(Math.PI / 3);
-      ctx.fillStyle = 'rgba(255, 236, 178, 0.68)';
+      ctx.fillStyle = 'rgba(255, 236, 178, 0.65)';
       ctx.beginPath();
-      ctx.moveTo(-4, 0);
-      ctx.lineTo(0, -56);
-      ctx.lineTo(4, 0);
+      ctx.moveTo(-3.5, 0);
+      ctx.lineTo(0, -52);
+      ctx.lineTo(3.5, 0);
       ctx.closePath();
       ctx.fill();
     }
@@ -251,13 +276,19 @@ export function createWeaponRig(camera) {
     side: THREE.DoubleSide,
   });
   const flash = new THREE.Group();
-  const flashCrossA = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.18), flashMat);
-  const flashCrossB = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.2), flashMat);
+  const flashCrossA = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28), flashMat);
+  const flashCrossB = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.26), flashMat);
   flashCrossB.rotation.y = Math.PI * 0.5;
   flashCrossB.rotation.x = Math.PI * 0.5;
   flashCrossB.position.z = -0.05;
-  flash.add(flashCrossA, flashCrossB);
-  flash.position.set(0, 0.025, -0.64);
+  const flashCore = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.052, 0),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color('#fffbeb') }),
+  );
+  flashCore.scale.set(1, 1, 2.2);
+  flashCore.position.z = -0.04;
+  flash.add(flashCrossA, flashCrossB, flashCore);
+  flash.position.set(0, 0.025, -0.66);
   flash.visible = false;
   rig.add(flash);
 
@@ -266,7 +297,7 @@ export function createWeaponRig(camera) {
   camera.add(flashLight);
 
   const muzzleTip = new THREE.Object3D();
-  muzzleTip.position.set(0, 0.03, -0.68);
+  muzzleTip.position.set(0, 0.025, -0.66);
   rig.add(muzzleTip);
 
   const state = {
@@ -297,7 +328,7 @@ export function createWeaponRig(camera) {
     for (const key of Object.keys(models)) {
       models[key].visible = key === state.activeId;
     }
-    const zTip = state.activeId === 'sniper' ? -0.84 : state.activeId === 'pistol' || state.activeId === 'deagle' ? -0.27 : -0.62;
+    const zTip = state.activeId === 'sniper' ? -0.86 : state.activeId === 'pistol' || state.activeId === 'deagle' ? -0.27 : -0.66;
     flash.position.set(0, 0.025, zTip);
     muzzleTip.position.set(0, 0.025, zTip);
   }
@@ -405,7 +436,7 @@ export function createWeaponRig(camera) {
     if (flash.visible) {
       const fRatio = Math.min(1, state.flash / 0.055);
       flash.rotation.z = state.flash * 42;
-      flash.scale.setScalar(0.7 + fRatio * 0.4);
+      flash.scale.setScalar(0.7 + fRatio * 0.38);
       flashMat.opacity = 0.85 * fRatio;
     }
     flashLight.intensity = flash.visible ? 14 : 0;

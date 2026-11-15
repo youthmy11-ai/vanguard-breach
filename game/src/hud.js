@@ -4,16 +4,17 @@ import { PALETTE } from './palette.js';
 import { WEAPONS } from './weapons.js';
 
 const BUY_ITEMS = [
-  { id: 'deagle', title: 'Viper .44 Magnum', type: 'weapon', price: WEAPONS.deagle.price, desc: 'Heavy Sidearm • 7 Mag • 2.8x Head Crit' },
-  { id: 'smg', title: 'Kestrel MP-7', type: 'weapon', price: WEAPONS.smg.price, desc: 'Fast-firing PDW • 32 Mag • High mobility' },
-  { id: 'rifle', title: 'Vanguard AR-47', type: 'weapon', price: WEAPONS.rifle.price, desc: 'Precision Rifle • 30 Mag • 3.1x Head Crit' },
-  { id: 'sniper', title: 'Helios M90', type: 'weapon', price: WEAPONS.sniper.price, desc: 'Heavy Bolt Sniper • 2.5x Optic • 1-Shot Kill' },
-  { id: 'armor', title: 'Kevlar + Helmet', type: 'armor', price: 600, desc: '100 Tactical Armor • Absorbs 48% Damage' },
-  { id: 'grenade', title: 'Frag HE Grenade', type: 'grenade', price: 200, desc: 'Arc Explosive [G] • Max 2 Carried' },
+  { id: 'deagle', title: 'Viper .44 Magnum', type: 'weapon', price: WEAPONS.deagle.price, desc: 'Heavy Sidearm • 48 DMG • 2.8x Head Crit' },
+  { id: 'smg', title: 'Kestrel MP-7', type: 'weapon', price: WEAPONS.smg.price, desc: 'Rapid PDW • 32 Mag • High Mobility' },
+  { id: 'rifle', title: 'Vanguard AR-47', type: 'weapon', price: WEAPONS.rifle.price, desc: 'Precision Rifle • 34 DMG • 3.1x Head Crit' },
+  { id: 'sniper', title: 'Helios M90', type: 'weapon', price: WEAPONS.sniper.price, desc: 'Bolt Sniper • 105 DMG • 2.5x Optic Scope' },
+  { id: 'armor', title: 'Kevlar + Helmet', type: 'armor', price: 600, desc: '100 Armor • Absorbs 48% Incoming Hit' },
+  { id: 'grenade', title: 'Frag HE Grenade', type: 'grenade', price: 200, desc: 'HE Arc Blast [G] • Max 2 Carried' },
 ];
 
 export function createHud() {
   const el = {
+    hud: document.getElementById('hud'),
     crosshair: document.getElementById('crosshair'),
     scope: document.getElementById('scope-overlay'),
     hitmarker: document.getElementById('hitmarker'),
@@ -50,20 +51,48 @@ export function createHud() {
     overlayTag: document.getElementById('overlay-tag'),
     overlayTitle: document.getElementById('overlay-title'),
     overlayCopy: document.getElementById('overlay-copy'),
+    mvpBanner: document.getElementById('mvp-banner'),
     statsGrid: document.getElementById('stats-grid'),
     statKd: document.getElementById('stat-kd'),
     statHs: document.getElementById('stat-hs'),
     statDmg: document.getElementById('stat-dmg'),
     statScore: document.getElementById('stat-score'),
+    roundStrip: document.getElementById('round-strip'),
     playBtn: document.getElementById('play'),
   };
 
   const radarCtx = el.radar.getContext('2d');
+  const mapSpanX = MAP_BOUNDS.maxX - MAP_BOUNDS.minX;
+  const mapSpanZ = MAP_BOUNDS.maxZ - MAP_BOUNDS.minZ;
+  const radarW = el.radar.width;
+  const radarH = el.radar.height;
+  const scaleX = radarW / mapSpanX;
+  const scaleZ = radarH / mapSpanZ;
+
   let hitTimer = 0;
   let vignetteTimer = 0;
   let bannerTimer = 0;
   let buyHandler = null;
   let closeBuyHandler = null;
+
+  const cache = {
+    hp: -1,
+    armor: -1,
+    credits: -1,
+    vanScore: -1,
+    obsScore: -1,
+    vanAlive: -1,
+    obsAlive: -1,
+    timeSec: -1,
+    phaseLabel: '',
+    armed: null,
+    weaponLabel: '',
+    mag: -9,
+    reserve: -9,
+    slotKey: '',
+    gap: -1,
+    scoped: null,
+  };
 
   function renderBuyCards(credits, weaponState, armor) {
     el.buyCredits.textContent = `$${credits}`;
@@ -91,21 +120,22 @@ export function createHud() {
     if (closeBuyHandler) closeBuyHandler();
   });
 
-  function mapToRadar(x, z) {
-    const w = el.radar.width;
-    const h = el.radar.height;
-    const nx = (x - MAP_BOUNDS.minX) / (MAP_BOUNDS.maxX - MAP_BOUNDS.minX);
-    const nz = (z - MAP_BOUNDS.minZ) / (MAP_BOUNDS.maxZ - MAP_BOUNDS.minZ);
-    return [nx * w, nz * h];
-  }
-
   return {
     BUY_ITEMS,
+    setHudVisible(visible) {
+      el.hud.hidden = !visible;
+    },
     setCrosshair(spread, scoped) {
-      el.scope.classList.toggle('on', Boolean(scoped));
-      el.crosshair.style.display = scoped ? 'none' : 'block';
+      if (cache.scoped !== Boolean(scoped)) {
+        cache.scoped = Boolean(scoped);
+        el.scope.classList.toggle('on', cache.scoped);
+        el.crosshair.style.display = cache.scoped ? 'none' : 'block';
+      }
       const gap = Math.round(4 + Math.min(24, spread * 460));
-      el.crosshair.style.setProperty('--gap', `${gap}px`);
+      if (cache.gap !== gap) {
+        cache.gap = gap;
+        el.crosshair.style.setProperty('--gap', `${gap}px`);
+      }
     },
     hitMarker(headshot, holdMs = 95) {
       el.hitmarker.classList.add('on');
@@ -125,47 +155,92 @@ export function createHud() {
       }, 180);
     },
     setVitals(hp, armor, credits) {
-      el.hpVal.textContent = String(Math.max(0, hp));
-      el.hpFill.style.width = `${Math.max(0, Math.min(100, hp))}%`;
-      el.hpFill.style.background = hp > 35 ? '#22c55e' : PALETTE.obsidian;
-      el.armorVal.textContent = String(Math.max(0, armor));
-      el.armorFill.style.width = `${Math.max(0, Math.min(100, armor))}%`;
-      el.creditsVal.textContent = `$${credits}`;
+      const clampedHp = Math.max(0, hp);
+      const clampedArmor = Math.max(0, armor);
+      if (cache.hp !== clampedHp) {
+        cache.hp = clampedHp;
+        el.hpVal.textContent = String(clampedHp);
+        el.hpFill.style.width = `${Math.min(100, clampedHp)}%`;
+        el.hpFill.style.background = clampedHp > 35 ? '#22c55e' : PALETTE.obsidian;
+      }
+      if (cache.armor !== clampedArmor) {
+        cache.armor = clampedArmor;
+        el.armorVal.textContent = String(clampedArmor);
+        el.armorFill.style.width = `${Math.min(100, clampedArmor)}%`;
+      }
+      if (cache.credits !== credits) {
+        cache.credits = credits;
+        el.creditsVal.textContent = `$${credits}`;
+      }
     },
     setWeapon(spec, ammo, weaponState) {
-      el.weaponName.textContent = weaponState.reloadLeft > 0 ? `${spec.name} • RELOADING` : spec.name;
-      if (spec.melee) {
-        el.ammoMag.textContent = '—';
-        el.ammoReserve.textContent = 'MELEE';
-        el.ammoMag.classList.remove('low');
-      } else {
-        el.ammoMag.textContent = String(ammo.mag);
-        el.ammoReserve.textContent = `/ ${ammo.reserve}`;
-        el.ammoMag.classList.toggle('low', ammo.mag <= Math.ceil(spec.magSize * 0.25));
+      const label = weaponState.reloadLeft > 0 ? `${spec.name} • RELOADING` : spec.name;
+      if (cache.weaponLabel !== label) {
+        cache.weaponLabel = label;
+        el.weaponName.textContent = label;
       }
-      el.slot1.textContent = weaponState.primaryId ? `1 ${WEAPONS[weaponState.primaryId].name.split(' ')[0]}` : '1 Empty';
-      el.slot1.classList.toggle('active', spec.slot === 1);
-      el.slot2.textContent = `2 ${WEAPONS[weaponState.sidearmId || 'pistol'].name.split(' ')[0]}`;
-      el.slot2.classList.toggle('active', spec.slot === 2);
-      el.slot3.classList.toggle('active', spec.slot === 3);
-      el.slotG.textContent = `G Frag (${weaponState.grenades})`;
+      const magVal = spec.melee ? -1 : ammo.mag;
+      const resVal = spec.melee ? -1 : ammo.reserve;
+      if (cache.mag !== magVal || cache.reserve !== resVal) {
+        cache.mag = magVal;
+        cache.reserve = resVal;
+        if (spec.melee) {
+          el.ammoMag.textContent = '—';
+          el.ammoReserve.textContent = 'MELEE';
+          el.ammoMag.classList.remove('low');
+        } else {
+          el.ammoMag.textContent = String(ammo.mag);
+          el.ammoReserve.textContent = `/ ${ammo.reserve}`;
+          el.ammoMag.classList.toggle('low', ammo.mag <= Math.ceil(spec.magSize * 0.25));
+        }
+      }
+      const slotKey = `${spec.slot}|${weaponState.primaryId}|${weaponState.sidearmId}|${weaponState.grenades}`;
+      if (cache.slotKey !== slotKey) {
+        cache.slotKey = slotKey;
+        el.slot1.textContent = weaponState.primaryId ? `1 ${WEAPONS[weaponState.primaryId].name.split(' ')[0]}` : '1 Empty';
+        el.slot1.classList.toggle('active', spec.slot === 1);
+        el.slot2.textContent = `2 ${WEAPONS[weaponState.sidearmId || 'pistol'].name.split(' ')[0]}`;
+        el.slot2.classList.toggle('active', spec.slot === 2);
+        el.slot3.classList.toggle('active', spec.slot === 3);
+        el.slotG.textContent = `G Frag (${weaponState.grenades})`;
+      }
     },
     setMatchBar(vanScore, obsScore, vanAlive, obsAlive, timeSec, phaseLabel, armed) {
-      el.scoreVan.textContent = String(vanScore);
-      el.scoreObs.textContent = String(obsScore);
-      const mins = Math.floor(Math.max(0, timeSec) / 60);
-      const secs = Math.floor(Math.max(0, timeSec) % 60);
-      el.timer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-      el.timer.classList.toggle('armed', Boolean(armed));
-      el.phase.textContent = phaseLabel;
-
-      let vHtml = '';
-      for (let i = 0; i < 4; i += 1) vHtml += `<span class="pip van ${i < vanAlive ? 'on' : ''}"></span>`;
-      el.pipsVan.innerHTML = vHtml;
-
-      let oHtml = '';
-      for (let i = 0; i < 4; i += 1) oHtml += `<span class="pip obs ${i < obsAlive ? 'on' : ''}"></span>`;
-      el.pipsObs.innerHTML = oHtml;
+      if (cache.vanScore !== vanScore) {
+        cache.vanScore = vanScore;
+        el.scoreVan.textContent = String(vanScore);
+      }
+      if (cache.obsScore !== obsScore) {
+        cache.obsScore = obsScore;
+        el.scoreObs.textContent = String(obsScore);
+      }
+      const secInt = Math.max(0, Math.floor(timeSec));
+      if (cache.timeSec !== secInt) {
+        cache.timeSec = secInt;
+        const mins = Math.floor(secInt / 60);
+        const secs = secInt % 60;
+        el.timer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+      if (cache.armed !== Boolean(armed)) {
+        cache.armed = Boolean(armed);
+        el.timer.classList.toggle('armed', cache.armed);
+      }
+      if (cache.phaseLabel !== phaseLabel) {
+        cache.phaseLabel = phaseLabel;
+        el.phase.textContent = phaseLabel;
+      }
+      if (cache.vanAlive !== vanAlive) {
+        cache.vanAlive = vanAlive;
+        let vHtml = '';
+        for (let i = 0; i < 4; i += 1) vHtml += `<span class="pip van ${i < vanAlive ? 'on' : ''}"></span>`;
+        el.pipsVan.innerHTML = vHtml;
+      }
+      if (cache.obsAlive !== obsAlive) {
+        cache.obsAlive = obsAlive;
+        let oHtml = '';
+        for (let i = 0; i < 4; i += 1) oHtml += `<span class="pip obs ${i < obsAlive ? 'on' : ''}"></span>`;
+        el.pipsObs.innerHTML = oHtml;
+      }
     },
     setActionPrompt(text, progress01) {
       if (!text) {
@@ -206,23 +281,23 @@ export function createHud() {
       el.killfeed.innerHTML = '';
     },
     drawRadar(radarBoxes, playerState, bots, bombPlantedSite) {
-      const w = el.radar.width;
-      const h = el.radar.height;
-      radarCtx.fillStyle = '#141922';
-      radarCtx.fillRect(0, 0, w, h);
+      radarCtx.fillStyle = '#141b25';
+      radarCtx.fillRect(0, 0, radarW, radarH);
 
-      const scaleX = w / (MAP_BOUNDS.maxX - MAP_BOUNDS.minX);
-      const scaleZ = h / (MAP_BOUNDS.maxZ - MAP_BOUNDS.minZ);
-      radarCtx.fillStyle = '#313a4a';
-      for (const b of radarBoxes) {
-        const [cx, cz] = mapToRadar(b.x, b.z);
+      radarCtx.fillStyle = '#334054';
+      for (let i = 0; i < radarBoxes.length; i += 1) {
+        const b = radarBoxes[i];
+        const cx = ((b.x - MAP_BOUNDS.minX) / mapSpanX) * radarW;
+        const cz = ((b.z - MAP_BOUNDS.minZ) / mapSpanZ) * radarH;
         const bw = Math.max(2, b.w * scaleX);
         const bd = Math.max(2, b.d * scaleZ);
         radarCtx.fillRect(cx - bw * 0.5, cz - bd * 0.5, bw, bd);
       }
 
-      for (const site of SITES) {
-        const [sx, sz] = mapToRadar(site.center.x, site.center.z);
+      for (let i = 0; i < SITES.length; i += 1) {
+        const site = SITES[i];
+        const sx = ((site.center.x - MAP_BOUNDS.minX) / mapSpanX) * radarW;
+        const sz = ((site.center.z - MAP_BOUNDS.minZ) / mapSpanZ) * radarH;
         radarCtx.strokeStyle = bombPlantedSite === site.id ? PALETTE.obsidian : site.color;
         radarCtx.lineWidth = 1.5;
         radarCtx.strokeRect(sx - 8, sz - 8, 16, 16);
@@ -233,10 +308,11 @@ export function createHud() {
         radarCtx.fillText(site.id, sx, sz);
       }
 
-      for (const bot of bots) {
-        if (!bot.alive) continue;
-        if (bot.team === 'obsidian' && !bot.spotted) continue;
-        const [bx, bz] = mapToRadar(bot.pos.x, bot.pos.z);
+      for (let i = 0; i < bots.length; i += 1) {
+        const bot = bots[i];
+        if (!bot.alive || (bot.team === 'obsidian' && !bot.spotted)) continue;
+        const bx = ((bot.pos.x - MAP_BOUNDS.minX) / mapSpanX) * radarW;
+        const bz = ((bot.pos.z - MAP_BOUNDS.minZ) / mapSpanZ) * radarH;
         radarCtx.fillStyle = bot.team === 'vanguard' ? PALETTE.vanguard : PALETTE.obsidian;
         radarCtx.beginPath();
         radarCtx.arc(bx, bz, 3.3, 0, Math.PI * 2);
@@ -244,10 +320,11 @@ export function createHud() {
       }
 
       if (playerState.alive) {
-        const [px, pz] = mapToRadar(playerState.position.x, playerState.position.z);
+        const px = ((playerState.position.x - MAP_BOUNDS.minX) / mapSpanX) * radarW;
+        const pz = ((playerState.position.z - MAP_BOUNDS.minZ) / mapSpanZ) * radarH;
         const dirX = -Math.sin(playerState.yaw);
         const dirZ = -Math.cos(playerState.yaw);
-        radarCtx.strokeStyle = 'rgba(245, 166, 35, 0.55)';
+        radarCtx.strokeStyle = 'rgba(245, 158, 11, 0.65)';
         radarCtx.lineWidth = 1.5;
         radarCtx.beginPath();
         radarCtx.moveTo(px, pz);
@@ -271,17 +348,22 @@ export function createHud() {
     },
     showOverlay(mode, stats) {
       el.buyMenu.hidden = true;
+      el.overlay.classList.toggle('start-mode', mode === 'start');
       if (mode === 'start') {
         el.overlayTag.textContent = '4v4 Tactical Arena • Solstice Foundry';
         el.overlayTitle.textContent = 'Vanguard Breach';
-        el.overlayCopy.textContent = 'Breach Reactor Bay (A) & Container Dock (B) with Vanguard Strike. Buy tactical gear [B], eliminate Obsidian Wardens, and control the Resonance Core.';
+        el.overlayCopy.textContent = 'Lead Vanguard Strike against Obsidian Wardens across Reactor Bay (A), Mid Archway, and Container Dock (B). First to 5 rounds wins.';
+        el.mvpBanner.hidden = true;
         el.statsGrid.hidden = true;
+        el.roundStrip.hidden = true;
         el.playBtn.textContent = 'Play Match';
       } else if (mode === 'paused') {
         el.overlayTag.textContent = 'Match Paused';
         el.overlayTitle.textContent = 'Tactical Hold';
         el.overlayCopy.textContent = 'Pointer lock released. Click below to re-enter the arena.';
+        el.mvpBanner.hidden = true;
         el.statsGrid.hidden = true;
+        el.roundStrip.hidden = true;
         el.playBtn.textContent = 'Resume Match';
       } else {
         const won = stats.vanScore > stats.obsScore;
@@ -290,11 +372,21 @@ export function createHud() {
         el.overlayCopy.textContent = won
           ? 'Solstice Foundry secured. Vanguard Strike dominated the lanes.'
           : 'Obsidian Wardens held the foundry. Regroup and breach again.';
+        el.mvpBanner.textContent = `MATCH MVP • YOU — ${stats.kills} KILLS • ${stats.hsPct}% HEADSHOTS • ${stats.damage} DMG`;
+        el.mvpBanner.hidden = false;
         el.statsGrid.hidden = false;
         el.statKd.textContent = `${stats.kills} / ${stats.deaths}`;
         el.statHs.textContent = `${stats.hsPct}%`;
         el.statDmg.textContent = String(stats.damage);
         el.statScore.textContent = String(stats.score);
+        if (stats.roundHistory && stats.roundHistory.length > 0) {
+          el.roundStrip.innerHTML = stats.roundHistory
+            .map((r) => `<div class="rnd-pill ${r.winner === 'vanguard' ? 'van' : 'obs'}">R${r.round} ${r.winner === 'vanguard' ? 'WIN' : 'LOSS'}<span>${r.tag}</span></div>`)
+            .join('');
+          el.roundStrip.hidden = false;
+        } else {
+          el.roundStrip.hidden = true;
+        }
         el.playBtn.textContent = 'Play Again';
       }
       el.overlay.hidden = false;

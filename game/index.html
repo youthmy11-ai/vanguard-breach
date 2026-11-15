@@ -6,13 +6,13 @@
 <title>Vanguard Breach — Tactical FPS</title>
 <style>
   :root {
-    --canvas: #12161d;
-    --surface: #1b212c;
-    --panel: #242c3a;
-    --hairline: #333e50;
-    --ink: #eef1f6;
-    --muted: #95a3b8;
-    --accent: #f5a623;
+    --canvas: #121822;
+    --surface: #1a2230;
+    --panel: #232d3f;
+    --hairline: #36455e;
+    --ink: #f1f5f9;
+    --muted: #9fb0c7;
+    --accent: #f59e0b;
     --vanguard: #38bdf8;
     --obsidian: #ef4444;
     --gold: #fbbf24;
@@ -30,6 +30,7 @@
   }
   #game, #game canvas { position: fixed; inset: 0; display: block; }
   #hud { position: fixed; inset: 0; pointer-events: none; }
+  #hud[hidden] { display: none; }
 
   #damage-vignette {
     position: fixed;
@@ -48,7 +49,7 @@
   #scope-overlay::before, #scope-overlay::after {
     content: '';
     position: absolute;
-    background: rgba(238, 241, 246, 0.65);
+    background: rgba(241, 245, 249, 0.65);
   }
   #scope-overlay::before { left: 50%; top: 15%; bottom: 15%; width: 1px; }
   #scope-overlay::after { top: 50%; left: 25%; right: 25%; height: 1px; }
@@ -61,17 +62,8 @@
     height: 4px;
     transform: translate(-50%, -50%);
   }
-  #crosshair .dot {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: var(--ink);
-  }
-  #crosshair i {
-    position: absolute;
-    background: var(--ink);
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
-  }
+  #crosshair .dot { position: absolute; inset: 0; border-radius: 50%; background: var(--ink); }
+  #crosshair i { position: absolute; background: var(--ink); box-shadow: 0 0 2px rgba(0, 0, 0, 0.85); }
   #crosshair i:nth-child(2) { left: 1px; width: 2px; height: 8px; bottom: calc(100% + var(--gap, 5px)); }
   #crosshair i:nth-child(3) { left: 1px; width: 2px; height: 8px; top: calc(100% + var(--gap, 5px)); }
   #crosshair i:nth-child(4) { top: 1px; height: 2px; width: 8px; right: calc(100% + var(--gap, 5px)); }
@@ -110,7 +102,7 @@
     align-items: center;
     gap: 10px;
     padding: 6px 12px;
-    background: rgba(18, 22, 29, 0.84);
+    background: rgba(16, 22, 32, 0.86);
     border: 1px solid var(--hairline);
     border-radius: 4px;
   }
@@ -123,9 +115,9 @@
   .pip.obs.on { background: var(--obsidian); }
 
   #timer-box {
-    min-width: 170px;
+    min-width: 182px;
     padding: 5px 14px;
-    background: rgba(18, 22, 29, 0.9);
+    background: rgba(16, 22, 32, 0.92);
     border: 1px solid var(--hairline);
     border-radius: 4px;
     text-align: center;
@@ -139,7 +131,7 @@
     top: 14px;
     left: 16px;
     padding: 5px;
-    background: rgba(18, 22, 29, 0.84);
+    background: rgba(16, 22, 32, 0.86);
     border: 1px solid var(--hairline);
     border-radius: 4px;
   }
@@ -158,7 +150,7 @@
   }
   .kf-row {
     padding: 4px 10px;
-    background: rgba(18, 22, 29, 0.82);
+    background: rgba(16, 22, 32, 0.85);
     border: 1px solid var(--hairline);
     border-radius: 3px;
     display: flex;
@@ -169,11 +161,11 @@
 
   #banner {
     position: fixed;
-    top: 86px;
+    top: 84px;
     left: 50%;
     transform: translateX(-50%);
     padding: 7px 18px;
-    background: rgba(18, 22, 29, 0.9);
+    background: rgba(16, 22, 32, 0.9);
     border: 1px solid var(--accent);
     border-radius: 4px;
     font-size: 13px;
@@ -187,7 +179,7 @@
   #action-wrap {
     position: fixed;
     left: 50%;
-    bottom: 132px;
+    bottom: 128px;
     transform: translateX(-50%);
     text-align: center;
   }
@@ -195,16 +187,16 @@
   #action-text {
     font-size: 13px;
     font-weight: 600;
-    padding: 4px 12px;
-    background: rgba(18, 22, 29, 0.86);
-    border: 1px solid var(--hairline);
+    padding: 5px 14px;
+    background: rgba(16, 22, 32, 0.9);
+    border: 1px solid var(--accent);
     border-radius: 4px;
     margin-bottom: 6px;
   }
   #action-bar-bg {
-    width: 220px;
-    height: 7px;
-    background: rgba(18, 22, 29, 0.9);
+    width: 240px;
+    height: 8px;
+    background: rgba(16, 22, 32, 0.92);
     border: 1px solid var(--hairline);
     border-radius: 4px;
     overflow: hidden;
@@ -220,7 +212,7 @@
     align-items: center;
     gap: 14px;
     padding: 10px 14px;
-    background: rgba(18, 22, 29, 0.85);
+    background: rgba(16, 22, 32, 0.88);
     border: 1px solid var(--hairline);
     border-radius: 4px;
     font-family: var(--font-mono);
@@ -240,7 +232,7 @@
     right: 20px;
     bottom: 18px;
     padding: 10px 14px;
-    background: rgba(18, 22, 29, 0.85);
+    background: rgba(16, 22, 32, 0.88);
     border: 1px solid var(--hairline);
     border-radius: 4px;
     text-align: right;
@@ -259,21 +251,28 @@
     position: fixed;
     inset: 0;
     z-index: 20;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    background: rgba(12, 16, 22, 0.78);
-    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(10, 14, 20, 0.28);
   }
-  #buy-menu { z-index: 15; }
   .modal-bg[hidden] { display: none; }
+  #overlay.start-mode {
+    justify-content: flex-start;
+    padding-left: 44px;
+    background: linear-gradient(90deg, rgba(10, 14, 20, 0.72) 0%, rgba(10, 14, 20, 0.26) 40%, transparent 72%);
+  }
+  #buy-menu { z-index: 15; background: rgba(10, 14, 20, 0.22); }
 
   #buy-panel {
-    width: min(760px, 100%);
+    width: min(828px, 100%);
     padding: 22px;
-    background: var(--surface);
+    background: rgba(22, 29, 41, 0.94);
     border: 1px solid var(--hairline);
+    border-top: 3px solid var(--accent);
     border-radius: 6px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
   }
   .buy-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--hairline); padding-bottom: 10px; }
   .buy-head h2 { margin: 0; font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -292,28 +291,42 @@
   }
   .buy-card:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
   .buy-card.owned { border-color: var(--vanguard); }
-  .buy-card:disabled { opacity: 0.45; cursor: not-allowed; }
+  .buy-card:disabled { opacity: 0.52; cursor: not-allowed; }
   .buy-title { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
   .buy-price { font-family: var(--font-mono); color: var(--accent); }
+  .buy-card.owned .buy-price { color: var(--vanguard); }
   .buy-stats { font-size: 12px; color: var(--muted); line-height: 1.45; }
   .buy-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px; color: var(--muted); }
 
   .panel {
-    width: min(500px, 100%);
-    padding: 28px;
-    background: var(--surface);
+    width: min(560px, 100%);
+    padding: 26px 28px;
+    background: rgba(20, 27, 38, 0.91);
     border: 1px solid var(--hairline);
+    border-left: 4px solid var(--vanguard);
     border-radius: 6px;
+    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.55);
   }
+  #overlay.start-mode .panel { width: min(442px, 100%); }
   .panel-tag { font-family: var(--font-mono); font-size: 11px; color: var(--vanguard); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
   .panel h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; }
-  .panel p { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: var(--muted); }
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 18px;
+  .panel p { margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+
+  #mvp-banner {
+    padding: 7px 12px;
+    margin-bottom: 12px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.04em;
   }
+  #mvp-banner[hidden] { display: none; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
   .stats-grid[hidden] { display: none; }
   .stat-cell {
     padding: 10px 8px;
@@ -325,10 +338,31 @@
   .stat-val { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--ink); }
   .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; }
 
+  #round-strip {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  #round-strip[hidden] { display: none; }
+  .rnd-pill {
+    flex: 1 1 56px;
+    padding: 5px 6px;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-align: center;
+  }
+  .rnd-pill.van { border-bottom: 2px solid var(--vanguard); color: var(--vanguard); }
+  .rnd-pill.obs { border-bottom: 2px solid var(--obsidian); color: var(--obsidian); }
+  .rnd-pill span { display: block; font-size: 10px; color: var(--muted); margin-top: 1px; }
+
   .btn-primary {
     font: inherit;
     font-weight: 600;
-    padding: 11px 20px;
+    padding: 11px 22px;
     border: 1px solid var(--accent);
     border-radius: 5px;
     background: var(--accent);
@@ -338,13 +372,13 @@
   .btn-primary:hover { background: var(--ink); border-color: var(--ink); }
 
   .keys {
-    margin: 18px 0 0;
+    margin: 16px 0 0;
     padding: 0;
     list-style: none;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 7px 12px;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
   }
   .keys li { display: flex; align-items: center; gap: 6px; }
@@ -356,6 +390,7 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--ink);
+    white-space: nowrap;
   }
 </style>
 </head>
@@ -418,7 +453,7 @@
     <div id="weapon-name">VX-9 Sidearm</div>
     <div id="ammo-row"><span id="ammo-mag">12</span><span id="ammo-reserve">/ 48</span></div>
     <div id="slot-strip">
-      <span class="slot-pill" id="slot-1">1 Primary</span>
+      <span class="slot-pill" id="slot-1">1 Empty</span>
       <span class="slot-pill active" id="slot-2">2 VX-9</span>
       <span class="slot-pill" id="slot-3">3 Blade</span>
       <span class="slot-pill" id="slot-g">G Frag (1)</span>
@@ -440,17 +475,19 @@
   </section>
 </div>
 
-<div id="overlay" class="modal-bg">
+<div id="overlay" class="modal-bg start-mode">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
     <div class="panel-tag" id="overlay-tag">4v4 Tactical Arena • Solstice Foundry</div>
     <h1 id="overlay-title">Vanguard Breach</h1>
-    <p id="overlay-copy">Lead Vanguard Strike against Obsidian Wardens across 3 industrial lanes. First team to 5 round wins claims the foundry.</p>
+    <p id="overlay-copy">Lead Vanguard Strike against Obsidian Wardens across Reactor Bay (A), Mid Archway, and Container Dock (B). First to 5 rounds wins.</p>
+    <div id="mvp-banner" hidden></div>
     <div class="stats-grid" id="stats-grid" hidden>
       <div class="stat-cell"><div class="stat-val" id="stat-kd">0 / 0</div><div class="stat-lbl">Kills / Deaths</div></div>
       <div class="stat-cell"><div class="stat-val" id="stat-hs">0%</div><div class="stat-lbl">Headshot %</div></div>
       <div class="stat-cell"><div class="stat-val" id="stat-dmg">0</div><div class="stat-lbl">Damage</div></div>
       <div class="stat-cell"><div class="stat-val" id="stat-score">0</div><div class="stat-lbl">Score</div></div>
     </div>
+    <div id="round-strip" hidden></div>
     <button id="play" class="btn-primary" type="button">Play Match</button>
     <ul class="keys">
       <li><kbd>WASD</kbd> Move</li>

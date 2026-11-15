@@ -1,11 +1,11 @@
-// Procedural offline CanvasTexture generator for Solstice Foundry surfaces. Zero external assets.
+// Procedural offline CanvasTexture generator for Solstice Foundry surfaces and golden-hour sky.
 import * as THREE from 'three';
 import { PALETTE } from './palette.js';
 
-function makeCanvas(size) {
+function makeCanvas(w, h = w) {
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = w;
+  canvas.height = h;
   return { canvas, ctx: canvas.getContext('2d') };
 }
 
@@ -19,13 +19,13 @@ function finalize(canvas, repeatX = 1, repeatY = 1) {
   return tex;
 }
 
-function addNoise(ctx, size, alpha = 0.06) {
+function addNoise(ctx, size, alpha = 0.05) {
   let s = 1337;
   const rand = () => {
     s = (s * 16807) % 2147483647;
     return (s - 1) / 2147483646;
   };
-  for (let i = 0; i < 900; i += 1) {
+  for (let i = 0; i < 950; i += 1) {
     const x = rand() * size;
     const y = rand() * size;
     const w = 1 + rand() * 3;
@@ -35,7 +35,7 @@ function addNoise(ctx, size, alpha = 0.06) {
 }
 
 export function createTextureSet() {
-  // 1. Concrete Courtyard Floor Tiles
+  // 1. Sunlit Concrete Courtyard Tiles
   const floor = makeCanvas(256);
   floor.ctx.fillStyle = PALETTE.concrete;
   floor.ctx.fillRect(0, 0, 256, 256);
@@ -49,25 +49,25 @@ export function createTextureSet() {
     floor.ctx.lineTo(256, i);
     floor.ctx.stroke();
   }
-  addNoise(floor.ctx, 256, 0.05);
+  addNoise(floor.ctx, 256, 0.055);
 
-  // 2. Ribbed Steel Wall Panels
+  // 2. Ribbed Industrial Steel Walls with Safety Trim
   const wall = makeCanvas(256);
   wall.ctx.fillStyle = PALETTE.steel;
   wall.ctx.fillRect(0, 0, 256, 256);
   for (let x = 0; x < 256; x += 32) {
     wall.ctx.fillStyle = 'rgba(0,0,0,0.16)';
     wall.ctx.fillRect(x, 0, 6, 256);
-    wall.ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    wall.ctx.fillStyle = 'rgba(255,255,255,0.08)';
     wall.ctx.fillRect(x + 6, 0, 3, 256);
   }
   wall.ctx.fillStyle = PALETTE.steelDark;
-  wall.ctx.fillRect(0, 210, 256, 46);
+  wall.ctx.fillRect(0, 206, 256, 50);
   wall.ctx.fillStyle = PALETTE.accent;
-  wall.ctx.fillRect(0, 206, 256, 4);
+  wall.ctx.fillRect(0, 200, 256, 6);
   addNoise(wall.ctx, 256, 0.04);
 
-  // 3. Hazard Chevron Pad (Site A / B markers)
+  // 3. Hazard Chevron Planting Pad
   const hazard = makeCanvas(256);
   hazard.ctx.fillStyle = '#202630';
   hazard.ctx.fillRect(0, 0, 256, 256);
@@ -81,32 +81,32 @@ export function createTextureSet() {
     hazard.ctx.closePath();
     hazard.ctx.fill();
   }
-  hazard.ctx.fillStyle = '#1e242e';
-  hazard.ctx.fillRect(24, 24, 208, 208);
+  hazard.ctx.fillStyle = '#262f3d';
+  hazard.ctx.fillRect(26, 26, 204, 204);
 
-  // 4. Corrugated Shipping Container (Amber & Teal)
+  // 4. Corrugated Cargo Containers
   function makeContainer(baseHex) {
     const c = makeCanvas(256);
     c.ctx.fillStyle = baseHex;
     c.ctx.fillRect(0, 0, 256, 256);
     for (let x = 0; x < 256; x += 16) {
-      c.ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      c.ctx.fillStyle = 'rgba(0,0,0,0.2)';
       c.ctx.fillRect(x, 0, 6, 256);
-      c.ctx.fillStyle = 'rgba(255,255,255,0.09)';
+      c.ctx.fillStyle = 'rgba(255,255,255,0.1)';
       c.ctx.fillRect(x + 6, 0, 3, 256);
     }
-    c.ctx.strokeStyle = 'rgba(18,22,29,0.55)';
+    c.ctx.strokeStyle = 'rgba(18,24,34,0.55)';
     c.ctx.lineWidth = 10;
     c.ctx.strokeRect(5, 5, 246, 246);
     addNoise(c.ctx, 256, 0.04);
     return finalize(c.canvas, 2, 1);
   }
 
-  // 5. Tactical Supply Crate
+  // 5. Reinforced Tactical Crate
   const crate = makeCanvas(128);
   crate.ctx.fillStyle = PALETTE.crateWood;
   crate.ctx.fillRect(0, 0, 128, 128);
-  crate.ctx.strokeStyle = '#574128';
+  crate.ctx.strokeStyle = '#5e4528';
   crate.ctx.lineWidth = 10;
   crate.ctx.strokeRect(5, 5, 118, 118);
   crate.ctx.beginPath();
@@ -117,10 +117,10 @@ export function createTextureSet() {
   crate.ctx.stroke();
   addNoise(crate.ctx, 128, 0.05);
 
-  // 6. Site Label Decal Canvas
+  // 6. Site Marker Decal
   function makeSiteDecal(letter, colorHex) {
     const c = makeCanvas(128);
-    c.ctx.fillStyle = 'rgba(18,22,29,0.85)';
+    c.ctx.fillStyle = 'rgba(18,24,34,0.9)';
     c.ctx.fillRect(0, 0, 128, 128);
     c.ctx.strokeStyle = colorHex;
     c.ctx.lineWidth = 8;
@@ -133,6 +133,27 @@ export function createTextureSet() {
     return finalize(c.canvas, 1, 1);
   }
 
+  // 7. Golden-Hour Sky Dome Texture
+  const sky = makeCanvas(512, 256);
+  const skyGrad = sky.ctx.createLinearGradient(0, 0, 0, 256);
+  skyGrad.addColorStop(0, PALETTE.skyTop);
+  skyGrad.addColorStop(0.45, PALETTE.skyMid);
+  skyGrad.addColorStop(0.68, PALETTE.skyHorizon);
+  skyGrad.addColorStop(1, '#313a48');
+  sky.ctx.fillStyle = skyGrad;
+  sky.ctx.fillRect(0, 0, 512, 256);
+
+  // Subtle distant foundry skyline silhouettes along horizon
+  sky.ctx.fillStyle = 'rgba(28, 36, 48, 0.52)';
+  for (let x = 0; x < 512; x += 28) {
+    const h = 14 + ((x * 37) % 26);
+    sky.ctx.fillRect(x, 166 - h, 20, h + 18);
+  }
+
+  const skyTex = finalize(sky.canvas, 1, 1);
+  skyTex.wrapS = THREE.ClampToEdgeWrapping;
+  skyTex.wrapT = THREE.ClampToEdgeWrapping;
+
   return {
     floor: finalize(floor.canvas, 16, 15),
     wall: finalize(wall.canvas, 3, 1),
@@ -142,5 +163,6 @@ export function createTextureSet() {
     crate: finalize(crate.canvas, 1, 1),
     siteA: makeSiteDecal('A', PALETTE.siteA),
     siteB: makeSiteDecal('B', PALETTE.siteB),
+    sky: skyTex,
   };
 }

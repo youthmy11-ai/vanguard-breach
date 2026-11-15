@@ -5,14 +5,14 @@ import { createWorld, SITES, TEAM_SPAWNS } from './world.js';
 import { createAudio } from './audio.js';
 import { createInput } from './input.js';
 import { createPlayer } from './player.js';
-import { createWeaponRig, WEAPONS } from './weapons.js';
+import { createWeaponRig } from './weapons.js';
 import { createBots } from './bots.js';
 import { createGrenades } from './grenades.js';
 import { createHud } from './hud.js';
 
 const FIXED_STEP = 1 / 60;
 const WIN_ROUNDS = 5;
-const BUY_FREEZE_SEC = 6;
+const BUY_FREEZE_SEC = 5;
 const ROUND_SEC = 75;
 const BOMB_SEC = 28;
 const params = new URLSearchParams(window.location.search);
@@ -39,8 +39,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.getElementById('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(PALETTE.skyHorizon);
-scene.fog = new THREE.Fog(new THREE.Color(PALETTE.skyHorizon), 28, 76);
+scene.background = new THREE.Color(PALETTE.skyMid);
+scene.fog = new THREE.Fog(new THREE.Color('#8e7a6b'), 34, 88);
 
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.05, 160);
 scene.add(camera);
@@ -57,10 +57,12 @@ const input = createInput(renderer.domElement, onLockChange, onDiscreteKey);
 const raycaster = new THREE.Raycaster();
 raycaster.far = 90;
 const shootables = world.shootables.concat(bots.hitMeshes);
-const tmpDir = new THREE.Vector3();
-const tmpMuzzle = new THREE.Vector3();
-const tmpEnd = new THREE.Vector3();
-const tmpZero = new THREE.Vector3();
+const _dir = new THREE.Vector3();
+const _muzzle = new THREE.Vector3();
+const _end = new THREE.Vector3();
+const _upNorm = new THREE.Vector3(0, 1, 0);
+const _shotA = new THREE.Vector3();
+const _shotB = new THREE.Vector3();
 
 const match = {
   round: 1,
@@ -73,7 +75,7 @@ const match = {
   headshots: 0,
   damage: 0,
   score: 0,
-  phase: 'start', // start | buy | live | roundEnd | matchEnd
+  phase: 'start',
   phaseTimer: BUY_FREEZE_SEC,
   roundElapsed: 0,
   bombPlanted: null,
@@ -83,6 +85,7 @@ const match = {
   defuseProgress: 0,
   side: 'attack',
   attackTarget: 'A',
+  roundHistory: [],
 };
 
 let elapsed = 0;
@@ -125,13 +128,9 @@ function purchaseItem(item) {
     return;
   }
   match.credits -= item.price;
-  if (item.type === 'weapon') {
-    weapon.giveWeapon(item.id);
-  } else if (item.type === 'armor') {
-    player.state.armor = 100;
-  } else if (item.type === 'grenade') {
-    weapon.state.grenades += 1;
-  }
+  if (item.type === 'weapon') weapon.giveWeapon(item.id);
+  else if (item.type === 'armor') player.state.armor = 100;
+  else if (item.type === 'grenade') weapon.state.grenades += 1;
   audio.ui('buy');
   hud.showBuyMenu(match.credits, weapon.state, player.state.armor);
   syncHud();
@@ -141,13 +140,13 @@ function throwGrenade() {
   if (!player.state.alive || (match.phase !== 'live' && !shot)) return;
   if (weapon.state.grenades <= 0) return;
   weapon.state.grenades -= 1;
-  camera.getWorldDirection(tmpDir);
-  tmpMuzzle.set(
-    player.state.position.x + tmpDir.x * 0.6,
+  camera.getWorldDirection(_dir);
+  _muzzle.set(
+    player.state.position.x + _dir.x * 0.6,
     player.state.position.y + player.state.eye - 0.1,
-    player.state.position.z + tmpDir.z * 0.6,
+    player.state.position.z + _dir.z * 0.6,
   );
-  grenades.spawn(tmpMuzzle, tmpDir, 'vanguard');
+  grenades.spawn(_muzzle, _dir, 'vanguard');
   audio.shot('knife', 0.9);
   syncHud();
 }
@@ -187,6 +186,7 @@ function onLockChange(locked) {
   if (locked) {
     playing = true;
     input.setActive(true);
+    hud.setHudVisible(true);
     hud.hideOverlay();
     hud.hideBuyMenu();
     if (match.phase === 'start') startNewMatch();
@@ -202,10 +202,9 @@ hud.onPlay(() => {
   audio.unlock();
   playing = true;
   input.setActive(true);
+  hud.setHudVisible(true);
   hud.hideOverlay();
-  if (match.phase === 'matchEnd' || match.phase === 'start') {
-    startNewMatch();
-  }
+  if (match.phase === 'matchEnd' || match.phase === 'start') startNewMatch();
   input.requestLock();
 });
 
@@ -222,6 +221,7 @@ function buildMatchStats() {
     hsPct,
     damage: match.damage,
     score: match.score,
+    roundHistory: match.roundHistory,
   };
 }
 
@@ -274,6 +274,7 @@ function startNewMatch() {
   match.headshots = 0;
   match.damage = 0;
   match.score = 0;
+  match.roundHistory = [];
   player.state.armor = 0;
   player.state.alive = true;
   weapon.resetMatch();
@@ -281,10 +282,11 @@ function startNewMatch() {
   setupRound(1);
 }
 
-function endRound(winnerTeam, reason) {
+function endRound(winnerTeam, reason, tag = 'Elim') {
   if (match.phase === 'roundEnd' || match.phase === 'matchEnd') return;
   match.phase = 'roundEnd';
   match.phaseTimer = 3.2;
+  match.roundHistory.push({ round: match.round, winner: winnerTeam, tag });
   if (winnerTeam === 'vanguard') {
     match.vanScore += 1;
     match.credits = Math.min(6000, match.credits + 1600);
@@ -335,23 +337,23 @@ function shoot(forceZeroSpread = false) {
   if (!weapon.takeRound()) return false;
 
   const spread = forceZeroSpread ? 0 : weapon.spread(player.groundSpeed(), player.state.onGround, player.state.crouching);
-  camera.getWorldDirection(tmpDir);
-  tmpDir.x += (random() * 2 - 1) * spread;
-  tmpDir.y += (random() * 2 - 1) * spread;
-  tmpDir.z += (random() * 2 - 1) * spread;
-  tmpDir.normalize();
+  camera.getWorldDirection(_dir);
+  _dir.x += (random() * 2 - 1) * spread;
+  _dir.y += (random() * 2 - 1) * spread;
+  _dir.z += (random() * 2 - 1) * spread;
+  _dir.normalize();
 
   scene.updateMatrixWorld(true);
-  raycaster.set(camera.position, tmpDir);
+  raycaster.set(camera.position, _dir);
   raycaster.far = spec.melee ? spec.range : 90;
 
   const hits = raycaster.intersectObjects(shootables, false);
   const hit = hits.find((h) => !(h.object.userData.bot && h.object.userData.bot.team === 'vanguard')) ?? null;
   if (!spec.melee) {
-    weapon.getMuzzleWorldPos(tmpMuzzle);
-    if (hit) tmpEnd.copy(hit.point);
-    else tmpEnd.copy(camera.position).addScaledVector(tmpDir, 45);
-    world.spawnTracer(tmpMuzzle, tmpEnd, PALETTE.accent, shot ? 0.45 : 0.085);
+    weapon.getMuzzleWorldPos(_muzzle);
+    if (hit) _end.copy(hit.point);
+    else _end.copy(camera.position).addScaledVector(_dir, 45);
+    world.spawnTracer(_muzzle, _end, PALETTE.accent, shot ? 0.5 : 0.085);
     bots.notifyNoise(player.state.position, 'vanguard', 24);
   }
 
@@ -369,7 +371,7 @@ function shoot(forceZeroSpread = false) {
           if (res.headshot) match.headshots += 1;
           hud.hitMarker(res.headshot, shot ? 4000 : 110);
           audio.hit(res.headshot);
-          world.spawnImpact(hit.point, null, res.headshot ? PALETTE.headGold : PALETTE.obsidian, 5);
+          world.spawnImpact(hit.point, null, res.headshot ? PALETTE.headGold : PALETTE.obsidian, 6);
           if (res.killed) {
             match.kills += 1;
             const bonus = res.headshot ? 450 : 300;
@@ -380,7 +382,7 @@ function shoot(forceZeroSpread = false) {
         }
       }
     } else {
-      world.spawnImpact(hit.point, hit.face?.normal, PALETTE.ink, 3);
+      world.spawnImpact(hit.point, hit.face?.normal, PALETTE.ink, 4);
     }
   }
 
@@ -433,7 +435,7 @@ function handleBombAction(dt) {
           match.credits = Math.min(6000, match.credits + 350);
           match.score += 200;
           audio.bombEvent('defuse');
-          endRound('vanguard', 'Core Defused');
+          endRound('vanguard', 'Core Defused', 'Defuse');
           return;
         }
       } else {
@@ -475,12 +477,14 @@ function step(dt) {
 
   player.step(dt, input.state.keys, spec.speedMult, canMove || match.phase === 'buy', (crouching) => {
     audio.footstep(crouching);
+    if (!crouching) bots.notifyNoise(player.state.position, 'vanguard', 9.0);
   });
   weapon.step(dt, input.state.ads && !hud.isBuyOpen(), canMove ? player.groundSpeed() : 0);
 
   grenades.step(dt, (blastPos, radius, maxDmg) => {
     audio.explosion();
-    world.spawnImpact(blastPos, tmpZero, PALETTE.accent, 8);
+    world.spawnImpact(blastPos, _upNorm, PALETTE.accent, 10);
+    world.spawnSmokeBurst(blastPos, 7, PALETTE.smoke, 1.35);
     bots.applyBlast(blastPos, radius, maxDmg, (bot) => {
       if (bot.team === 'obsidian') {
         match.kills += 1;
@@ -531,7 +535,7 @@ function step(dt) {
     onBotDefuse() {
       if (!match.bombPlanted || match.phase !== 'live') return;
       audio.bombEvent('defuse');
-      endRound('obsidian', 'Core Defused');
+      endRound('obsidian', 'Core Defused', 'Defuse');
     },
   });
 
@@ -561,21 +565,21 @@ function step(dt) {
       }
       if (match.bombTimer <= 0) {
         audio.bombEvent('boom');
-        endRound('vanguard', 'Core Detonated');
+        endRound('vanguard', 'Core Detonated', 'Core');
       }
     } else {
       match.phaseTimer -= dt;
       if (match.phaseTimer <= 0) {
-        endRound(match.side === 'defend' ? 'vanguard' : 'obsidian', 'Time Expired');
+        endRound(match.side === 'defend' ? 'vanguard' : 'obsidian', 'Time Expired', 'Time');
       }
     }
 
     const vanAlive = bots.aliveCount('vanguard') + (player.state.alive ? 1 : 0);
     const obsAlive = bots.aliveCount('obsidian');
     if (obsAlive === 0 && (!match.bombPlanted || match.side === 'attack')) {
-      endRound('vanguard', 'Obsidian Eliminated');
+      endRound('vanguard', 'Obsidian Eliminated', 'Elim');
     } else if (vanAlive === 0 && !match.bombPlanted) {
-      endRound('obsidian', 'Vanguard Eliminated');
+      endRound('obsidian', 'Vanguard Eliminated', 'Elim');
     }
   } else if (match.phase === 'roundEnd') {
     match.phaseTimer -= dt;
@@ -641,48 +645,79 @@ function runShot(name) {
 
   if (name === 'start') {
     match.phase = 'start';
-    overviewCam = { pos: new THREE.Vector3(-5.5, 6.2, 13.5), look: new THREE.Vector3(-12.5, 1.4, -6.0) };
+    hud.setHudVisible(false);
+    overviewCam = { pos: new THREE.Vector3(-18.8, 4.4, 4.8), look: new THREE.Vector3(-12.6, 1.5, -7.8) };
     weapon.setVisible(false);
+    world.setBombPlanted('A');
+    // Position both armored squads around Site A Reactor Bay & Mid in open right-hand view
+    bots.bots[0].pos.set(-15.8, 0, 0.8);
+    bots.bots[1].pos.set(-11.4, 0, -0.4);
+    bots.bots[2].pos.set(-6.2, 0, 3.2);
+    bots.bots[3].pos.set(-14.2, 0, -4.8);
+    bots.bots[4].pos.set(-12.6, 0, -7.6);
+    bots.bots[5].pos.set(-16.6, 0, -7.2);
     for (const b of bots.bots) b.spotted = true;
-    bots.bots[3].pos.set(-14.2, 0, -4.5);
-    bots.bots[4].pos.set(-10.5, 0, -2.5);
-    settle(6);
+    settle(12);
+    _shotA.set(-15.8, 1.38, 0.8);
+    _shotB.set(-14.2, 1.48, -4.8);
+    world.spawnTracer(_shotA, _shotB, PALETTE.vanguard, 0.5);
+    _shotA.set(-12.6, 1.38, -7.6);
+    _shotB.set(-11.4, 1.42, -0.4);
+    world.spawnTracer(_shotA, _shotB, PALETTE.obsidian, 0.5);
     hud.showOverlay('start', buildMatchStats());
   } else if (name === 'buy') {
     match.phase = 'buy';
     match.round = 3;
     match.vanScore = 1;
     match.obsScore = 1;
-    match.credits = 2250;
-    player.state.armor = 50;
+    match.credits = 2450;
+    player.state.armor = 100;
+    hud.setHudVisible(true);
     weapon.setVisible(true);
-    player.spawnAt(new THREE.Vector3(0, 0, 17.5), 0);
+    player.spawnAt(new THREE.Vector3(0, 0, 15.2), 0);
+    bots.bots[0].pos.set(-4.6, 0, 8.8);
+    bots.bots[1].pos.set(4.6, 0, 8.8);
     settle(12);
     hud.showBuyMenu(match.credits, weapon.state, player.state.armor);
   } else if (name === 'play') {
     match.phase = 'live';
-    match.round = 3;
+    match.round = 4;
     match.vanScore = 2;
     match.obsScore = 1;
-    match.credits = 1450;
+    match.credits = 1900;
+    match.bombPlanted = 'A';
+    match.bombTimer = 21.4;
+    world.setBombPlanted('A');
     player.state.armor = 85;
+    hud.setHudVisible(true);
     weapon.setVisible(true);
     weapon.giveWeapon('rifle');
-    player.spawnAt(new THREE.Vector3(-1.4, 0, 7.6), 0);
-    // Position Obsidian bots down Mid Archway and a Vanguard teammate nearby
-    bots.bots[0].pos.set(-3.2, 0, 5.2);
-    bots.bots[3].pos.set(0.4, 0, -2.4);
-    bots.bots[4].pos.set(2.3, 0, -5.0);
-    bots.bots[5].pos.set(-2.6, 0, -6.5);
+    player.spawnAt(new THREE.Vector3(-16.2, 0, 4.6), 0);
+    bots.bots[0].pos.set(-18.0, 0, 1.2);
+    bots.bots[3].pos.set(-14.8, 0, -4.5);
+    bots.bots[4].pos.set(-12.8, 0, -7.4);
+    bots.bots[5].pos.set(-16.8, 0, -6.5);
     for (const b of bots.bots) b.spotted = true;
-    settle(10);
-    // Aim at enemy head down Mid Archway and fire for live tracer + muzzle flash + gold HS hitmarker
-    const targetHead = new THREE.Vector3(bots.bots[3].pos.x, 1.54, bots.bots[3].pos.z);
-    aimAt(targetHead);
+    // Trigger a live Frag HE grenade detonation beside Site A crate cover
+    _shotA.set(-11.6, 0.45, -4.2);
+    _shotB.set(-0.15, 0.05, -0.35);
+    grenades.spawn(_shotA, _shotB, 'vanguard', 0.14);
+    settle(13);
+    // Keep Viper upright if grenade dropped him, then land crisp Headshot on Viper
+    if (!bots.bots[3].alive) {
+      bots.bots[3].alive = true;
+      bots.bots[3].hp = 45;
+      bots.bots[3].fall = 0;
+      bots.bots[3].group.rotation.set(0, Math.PI, 0);
+    }
+    _shotA.set(bots.bots[3].pos.x, 1.54, bots.bots[3].pos.z);
+    aimAt(_shotA);
     shoot(true);
-    world.spawnTracer(new THREE.Vector3(2.3, 1.38, -5.0), new THREE.Vector3(-0.3, 1.45, 5.2), PALETTE.obsidian, 0.45);
+    _shotA.set(-12.8, 1.38, -7.4);
+    _shotB.set(-17.8, 1.42, 1.2);
+    world.spawnTracer(_shotA, _shotB, PALETTE.obsidian, 0.5);
     settle(1);
-    hud.showBanner('SITE A CLEAR — BREACH MID ARCH', 0);
+    hud.setActionPrompt('Hold [E] to Guard / Defuse Site A Core', 0.68);
   } else if (name === 'end') {
     match.phase = 'matchEnd';
     match.vanScore = 5;
@@ -693,8 +728,22 @@ function runShot(name) {
     match.headshots = 16;
     match.damage = 2140;
     match.score = 2850;
-    overviewCam = { pos: new THREE.Vector3(6.5, 5.8, 12.0), look: new THREE.Vector3(14.5, 1.4, -6.0) };
+    match.roundHistory = [
+      { round: 1, winner: 'vanguard', tag: 'Core' },
+      { round: 2, winner: 'obsidian', tag: 'Elim' },
+      { round: 3, winner: 'vanguard', tag: 'Defuse' },
+      { round: 4, winner: 'vanguard', tag: 'Core' },
+      { round: 5, winner: 'obsidian', tag: 'Time' },
+      { round: 6, winner: 'vanguard', tag: 'Elim' },
+      { round: 7, winner: 'vanguard', tag: 'Core' },
+    ];
+    hud.setHudVisible(false);
+    world.setBombPlanted('B');
+    overviewCam = { pos: new THREE.Vector3(14.5, 4.4, 6.2), look: new THREE.Vector3(14.8, 1.4, -6.5) };
     weapon.setVisible(false);
+    bots.bots[0].pos.set(10.6, 0, -1.2);
+    bots.bots[1].pos.set(18.6, 0, -1.6);
+    bots.bots[3].pos.set(15.2, 0, -8.2);
     settle(6);
     hud.showOverlay('end', buildMatchStats());
   }
@@ -730,6 +779,7 @@ syncCamera();
 if (shot) {
   runShot(shot);
 } else {
+  hud.setHudVisible(false);
   hud.showOverlay('start', buildMatchStats());
   hud.drawRadar(world.radarBoxes, player.state, bots.bots, null);
   syncHud();
