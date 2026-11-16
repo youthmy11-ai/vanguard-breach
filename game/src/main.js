@@ -410,7 +410,7 @@ function handleBombAction(dt) {
 function syncAllyTags() {
   const show = !overviewCam && match.phase !== 'start' && match.phase !== 'matchEnd';
   const w = window.innerWidth, h = window.innerHeight;
-  for (let i = 0; i < 3; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     const bot = bots.bots[i];
     if (!show || !bot || !bot.alive) { hud.setAllyTag(i, false); continue; }
     _projVec.set(bot.pos.x, bot.pos.y + 1.98 - 0.36 * bot.crouch, bot.pos.z).project(camera);
@@ -587,15 +587,15 @@ function runShot(name) {
     hud.setHudVisible(true); weapon.setVisible(true); weapon.giveWeapon('rifle');
     weapon.state.utility = { frag: 1, smoke: 0, flash: 1 };
     player.spawnAt(new THREE.Vector3(-16.0, 0, 3.6), 0);
-    placeBot(0, -13.8, -0.4, false, 0.22); placeBot(1, -10.4, -1.2);
-    placeBot(3, -14.2, -4.6); placeBot(4, -12.6, -7.8, true); placeBot(5, -16.8, -6.4);
-    world.spawnSmokeScreen(_shotA.set(-10.8, 0.1, -2.6), 3.25, 14.0);
+    placeBot(0, -13.8, -0.4, false, 0.22); placeBot(1, -10.4, -1.2); placeBot(2, -18.2, 0.4); placeBot(3, -12.0, 2.2);
+    placeBot(4, -14.2, -4.6); placeBot(5, -12.6, -7.8, true); placeBot(6, -16.8, -6.4);
+    world.spawnSmokeScreen(_shotA.set(-9.8, 0.1, -9.2), 2.5, 14.0);
     settle(24);
-    aimAt(_shotA.set(bots.bots[3].pos.x, 1.54, bots.bots[3].pos.z));
+    aimAt(_shotA.set(bots.bots[4].pos.x, 1.54, bots.bots[4].pos.z));
     shoot(true);
     tracer(-13.6, 1.15, -0.6, -12.6, 1.05, -7.8, PALETTE.vanguard);
     tracer(-16.8, 1.15, -6.4, -14.1, 1.25, -0.4, PALETTE.obsidian);
-    hud.pushRadio('Kestrel', 'Contact at Reactor Bay, smoke deployed!', 0);
+    hud.pushRadio('Kestrel', 'Contact at Reactor Bay A — pushing crossfire!', 0);
     settle(1);
   } else if (name === 'play') {
     match.phase = 'live'; match.round = 4; match.vanScore = 2; match.obsScore = 1; match.credits = 1950;
@@ -604,8 +604,9 @@ function runShot(name) {
     hud.setHudVisible(true); weapon.setVisible(true); weapon.giveWeapon('shotgun');
     weapon.state.utility = { frag: 1, smoke: 0, flash: 1 };
     player.spawnAt(new THREE.Vector3(15.3, 0, -3.7), 0);
-    placeBot(1, 17.2, -7.6, true); placeBot(4, 15.8, -14.0); placeBot(5, 12.6, -12.4);
-    world.spawnSmokeScreen(_shotA.set(11.6, 0.1, -6.2), 3.1, 14.0);
+    placeBot(1, 17.2, -7.6, true); placeBot(2, 12.2, -5.8);
+    placeBot(4, 15.8, -14.0); placeBot(5, 12.6, -12.4); placeBot(6, 18.4, -12.8, true);
+    world.spawnSmokeScreen(_shotA.set(9.6, 0.1, -11.4), 2.4, 14.0);
     settle(24);
     aimAt(_shotA.set(14.7, 0.92, -7.4));
     tracer(17.1, 0.85, -7.7, 15.8, 1.32, -14.0, PALETTE.vanguard);
@@ -626,9 +627,9 @@ function runShot(name) {
     match.phase = 'matchEnd'; match.vanScore = 5; match.obsScore = 2;
     const preset = [
       [14, 3, 3, 28, 16, 2140, 3, 3450], [9, 5, 4, 24, 9, 1460, 1, 2900],
-      [7, 4, 4, 19, 6, 1180, 1, 2650], [6, 6, 5, 16, 4, 980, 0, 2200],
+      [7, 4, 4, 19, 6, 1180, 1, 2650], [6, 6, 5, 16, 4, 980, 0, 2200], [5, 5, 5, 14, 4, 860, 0, 2050],
       [8, 2, 7, 22, 7, 1310, 1, 2450], [6, 3, 7, 18, 5, 1020, 1, 2100],
-      [4, 4, 7, 14, 3, 790, 0, 1850], [3, 2, 8, 11, 2, 620, 0, 1650],
+      [5, 3, 7, 15, 4, 890, 0, 1950], [4, 4, 7, 14, 3, 790, 0, 1850], [3, 2, 8, 11, 2, 620, 0, 1650],
     ];
     for (let i = 0; i < roster.length; i += 1) {
       const [kills, assists, deaths, hits, headshots, damage, mvp, credits] = preset[i];
@@ -641,7 +642,7 @@ function runShot(name) {
     hud.setHudVisible(false); world.setBombPlanted('B');
     overviewCam = { pos: new THREE.Vector3(14.5, 4.4, 6.2), look: new THREE.Vector3(14.8, 1.4, -6.5) };
     weapon.setVisible(false);
-    placeBot(0, 10.6, -1.2); placeBot(1, 18.6, -1.6); placeBot(3, 15.2, -8.2);
+    placeBot(0, 10.6, -1.2); placeBot(1, 18.6, -1.6); placeBot(4, 15.2, -8.2);
     settle(6);
     hud.showOverlay('end', buildMatchStats());
   }

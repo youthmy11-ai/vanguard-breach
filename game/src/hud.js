@@ -47,7 +47,7 @@ export function createHud() {
     hud: $('hud'), crosshair: $('crosshair'), scope: $('scope-overlay'), hitmarker: $('hitmarker'),
     vignette: $('damage-vignette'), flashBang: $('flash-overlay'), radar: $('radar'),
     radarLabel: $('radar-label'), radioFeed: $('radio-feed'),
-    allyTags: [$('ally-0'), $('ally-1'), $('ally-2')],
+    allyTags: [$('ally-0'), $('ally-1'), $('ally-2'), $('ally-3')],
     scoreVan: $('score-van'), scoreObs: $('score-obs'), pipsVan: $('pips-van'), pipsObs: $('pips-obs'),
     timer: $('round-timer'), phase: $('round-phase'), killfeed: $('killfeed'), banner: $('banner'),
     actionWrap: $('action-wrap'), actionText: $('action-text'), actionFill: $('action-bar-fill'),
@@ -192,8 +192,8 @@ export function createHud() {
       if (changed('sec', sec)) el.timer.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
       if (changed('arm', Boolean(armed))) el.timer.classList.toggle('armed', Boolean(armed));
       if (changed('ph', phaseLabel)) el.phase.textContent = phaseLabel;
-      if (changed('va', vanAlive)) el.pipsVan.innerHTML = [0, 1, 2, 3].map((i) => `<span class="pip van ${i < vanAlive ? 'on' : ''}"></span>`).join('');
-      if (changed('oa', obsAlive)) el.pipsObs.innerHTML = [0, 1, 2, 3].map((i) => `<span class="pip obs ${i < obsAlive ? 'on' : ''}"></span>`).join('');
+      if (changed('va', vanAlive)) el.pipsVan.innerHTML = [0, 1, 2, 3, 4].map((i) => `<span class="pip van ${i < vanAlive ? 'on' : ''}"></span>`).join('');
+      if (changed('oa', obsAlive)) el.pipsObs.innerHTML = [0, 1, 2, 3, 4].map((i) => `<span class="pip obs ${i < obsAlive ? 'on' : ''}"></span>`).join('');
     },
     setActionPrompt(text, progress01) {
       if (!text) { el.actionWrap.hidden = true; return; }
@@ -278,7 +278,7 @@ export function createHud() {
       el.overlay.classList.toggle('end-mode', mode === 'end');
       el.keysList.hidden = mode === 'end';
       if (mode === 'start') {
-        el.overlayTag.textContent = '4v4 Tactical Arena • Solstice Foundry';
+        el.overlayTag.textContent = '5v5 Tactical Arena • Solstice Foundry';
         el.overlayTitle.textContent = 'Vanguard Breach';
         el.overlayCopy.textContent = 'Lead Vanguard Strike against Obsidian Wardens across Reactor Bay (A), Mid Archway, and Container Dock (B). First to 5 rounds wins.';
         el.mvpBanner.hidden = true; el.scoreboard.hidden = true; el.roundStrip.hidden = true;

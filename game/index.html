@@ -102,14 +102,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--canvas);color:va
 .buy-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted)}
 .panel{width:min(560px,100%);padding:24px 26px;background:rgba(18,25,36,.93);border:1px solid var(--hairline);border-left:4px solid var(--vanguard);border-radius:6px;box-shadow:0 22px 54px rgba(0,0,0,.58)}
 #overlay.start-mode .panel{width:min(448px,100%)}
-#overlay.end-mode .panel{width:min(820px,95vw);padding:20px 24px}
+#overlay.end-mode .panel{width:min(820px,95vw);padding:14px 22px}
 .panel-tag{font-family:var(--font-mono);font-size:11px;color:var(--vanguard);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
 .panel h1{margin:0 0 8px;font-size:30px;line-height:1.1;letter-spacing:-.02em}
 .panel p{margin:0 0 14px;font-size:13px;line-height:1.45;color:var(--muted)}
 #mvp-banner{padding:7px 12px;margin-bottom:10px;background:rgba(245,158,11,.14);border:1px solid var(--accent);border-radius:4px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.04em}
 #scoreboard{margin-bottom:12px;border:1px solid var(--hairline);border-radius:4px;overflow:hidden}
 #scoreboard table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12px}
-#scoreboard th,#scoreboard td{padding:5px 9px;text-align:right;border-bottom:1px solid rgba(54,69,94,.45)}
+#scoreboard th,#scoreboard td{padding:3px 9px;text-align:right;border-bottom:1px solid rgba(54,69,94,.45);font-size:11.5px}
 #scoreboard th:first-child,#scoreboard td:first-child{text-align:left}
 #scoreboard thead th{background:var(--surface);color:var(--muted);font-size:11px;text-transform:uppercase}
 #scoreboard .sb-team th{background:rgba(24,33,47,.95);font-size:11px;letter-spacing:.06em;padding:4px 9px}
@@ -117,7 +117,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--canvas);color:va
 #scoreboard .sb-team.obs th{color:var(--obsidian)}
 #scoreboard .sb-you{background:rgba(56,189,248,.12);font-weight:700}
 #scoreboard .sb-you .sb-name{color:var(--gold)}
-#round-strip{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap}
+#round-strip{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
 .rnd-pill{flex:1 1 56px;padding:4px 6px;background:var(--panel);border:1px solid var(--hairline);border-radius:4px;font-family:var(--font-mono);font-size:11px;text-align:center}
 .rnd-pill.van{border-bottom:2px solid var(--vanguard);color:var(--vanguard)}
 .rnd-pill.obs{border-bottom:2px solid var(--obsidian);color:var(--obsidian)}
@@ -140,12 +140,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--canvas);color:va
   <div class="ally-tag" id="ally-0" hidden></div>
   <div class="ally-tag" id="ally-1" hidden></div>
   <div class="ally-tag" id="ally-2" hidden></div>
+  <div class="ally-tag" id="ally-3" hidden></div>
   <div id="radar-wrap"><canvas id="radar" width="148" height="136"></canvas><div id="radar-label">VANGUARD BASE</div></div>
   <div id="radio-feed"></div>
   <div id="topbar">
-    <div class="team-box"><div class="pips" id="pips-van"></div><div class="team-score vanguard-text" id="score-van">0</div></div>
+    <div class="team-box"><span class="vanguard-text" style="font-size:10px;font-weight:700;letter-spacing:.06em">VANGUARD</span><div class="pips" id="pips-van"></div><div class="team-score vanguard-text" id="score-van">0</div></div>
     <div id="timer-box"><div id="round-timer">01:15</div><div id="round-phase">ROUND 1 • BREACH A / B</div></div>
-    <div class="team-box"><div class="team-score obsidian-text" id="score-obs">0</div><div class="pips" id="pips-obs"></div></div>
+    <div class="team-box"><div class="team-score obsidian-text" id="score-obs">0</div><div class="pips" id="pips-obs"></div><span class="obsidian-text" style="font-size:10px;font-weight:700;letter-spacing:.06em">OBSIDIAN</span></div>
   </div>
   <div id="killfeed"></div>
   <div id="banner" hidden></div>
@@ -170,7 +171,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--canvas);color:va
 </div>
 <div id="overlay" class="modal-bg start-mode">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
-    <div class="panel-tag" id="overlay-tag">4v4 Tactical Arena • Solstice Foundry</div>
+    <div class="panel-tag" id="overlay-tag">5v5 Tactical Arena • Solstice Foundry</div>
     <h1 id="overlay-title">Vanguard Breach</h1>
     <p id="overlay-copy">Lead Vanguard Strike against Obsidian Wardens across Reactor Bay (A), Mid Archway, and Container Dock (B). First to 5 rounds wins.</p>
     <div id="mvp-banner" hidden></div>

@@ -41,17 +41,19 @@ export function createBots(scene, world, random) {
   const geo = {
     torso: new THREE.BoxGeometry(0.46, 0.68, 0.28),
     plate: new THREE.BoxGeometry(0.5, 0.44, 0.33),
+    pouch: new THREE.BoxGeometry(0.34, 0.14, 0.06),
     pauldron: new THREE.BoxGeometry(0.18, 0.16, 0.24),
     pack: new THREE.BoxGeometry(0.28, 0.4, 0.14),
     antenna: new THREE.CylinderGeometry(0.012, 0.012, 0.34, 6),
     head: new THREE.SphereGeometry(0.155, 14, 10),
     helmet: new THREE.BoxGeometry(0.32, 0.13, 0.34),
     visor: new THREE.BoxGeometry(0.27, 0.085, 0.14),
-    arm: new THREE.BoxGeometry(0.135, 0.52, 0.145),
-    leg: new THREE.BoxGeometry(0.17, 0.66, 0.19),
+    arm: new THREE.CylinderGeometry(0.062, 0.052, 0.52, 10),
+    leg: new THREE.CylinderGeometry(0.085, 0.068, 0.66, 10),
     knee: new THREE.BoxGeometry(0.185, 0.14, 0.21),
     gunBody: new THREE.BoxGeometry(0.075, 0.095, 0.48),
-    gunBarrel: new THREE.BoxGeometry(0.036, 0.036, 0.32),
+    gunStock: new THREE.BoxGeometry(0.06, 0.08, 0.18),
+    gunBarrel: new THREE.CylinderGeometry(0.018, 0.018, 0.36, 8),
     gunMag: new THREE.BoxGeometry(0.044, 0.13, 0.06),
     flash: new THREE.SphereGeometry(0.075, 6, 6),
   };
@@ -66,14 +68,14 @@ export function createBots(scene, world, random) {
       plate: new THREE.MeshStandardMaterial({ color: new THREE.Color('#1d354d'), roughness: 0.56, metalness: 0.28 }),
       limb: new THREE.MeshStandardMaterial({ color: new THREE.Color('#1a2433'), roughness: 0.75 }),
       visor: new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.vanguard) }),
-      names: ['Kestrel', 'Nova', 'Aegis'],
+      names: ['Kestrel', 'Nova', 'Aegis', 'Valkyrie'],
     },
     obsidian: {
       armor: new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE.obsidianArmor), roughness: 0.48, metalness: 0.35 }),
       plate: new THREE.MeshStandardMaterial({ color: new THREE.Color('#2d1b1e'), roughness: 0.56, metalness: 0.28 }),
       limb: new THREE.MeshStandardMaterial({ color: new THREE.Color('#1e1a1e'), roughness: 0.75 }),
       visor: new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.obsidian) }),
-      names: ['Viper', 'Cipher', 'Dusk', 'Talon'],
+      names: ['Viper', 'Cipher', 'Dusk', 'Talon', 'Nyx'],
     },
   };
 
@@ -99,6 +101,7 @@ export function createBots(scene, world, random) {
 
     const torso = makeMesh(geo.torso, armorMat, 0, 1.02, 0);
     const plate = makeMesh(geo.plate, s.plate, 0, 1.07, 0);
+    const pouch = makeMesh(geo.pouch, s.plate, 0, 0.98, -0.18);
     const pauldronL = makeMesh(geo.pauldron, armorMat, -0.33, 1.24, 0);
     const pauldronR = makeMesh(geo.pauldron, armorMat, 0.33, 1.24, 0);
     const pack = makeMesh(geo.pack, s.plate, 0, 1.08, 0.19);
@@ -110,7 +113,8 @@ export function createBots(scene, world, random) {
     gun.position.set(0.24, 1.07, -0.34);
     gun.add(
       makeMesh(geo.gunBody, sharedMats.gun, 0, 0, 0),
-      makeMesh(geo.gunBarrel, sharedMats.barrel, 0, 0.015, -0.36),
+      makeMesh(geo.gunStock, sharedMats.gun, 0, -0.01, 0.24),
+      makeMesh(geo.gunBarrel, sharedMats.barrel, 0, 0.015, -0.36, Math.PI * 0.5),
       makeMesh(geo.gunMag, sharedMats.gun, 0, -0.09, -0.06),
     );
     const muzzle = makeMesh(geo.flash, sharedMats.flash, 0.24, 1.09, -0.84);
@@ -120,7 +124,7 @@ export function createBots(scene, world, random) {
     const helmet = makeMesh(geo.helmet, s.plate, 0, 1.61, 0.01);
     const visor = makeMesh(geo.visor, s.visor, 0, 1.54, -0.11);
 
-    upper.add(torso, plate, pauldronL, pauldronR, pack, antenna, armL, armR, gun, muzzle, head, helmet, visor);
+    upper.add(torso, plate, pouch, pauldronL, pauldronR, pack, antenna, armL, armR, gun, muzzle, head, helmet, visor);
     group.add(legL, legR, upper);
     group.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     scene.add(group);
@@ -138,7 +142,7 @@ export function createBots(scene, world, random) {
 
     for (const [m, part] of [
       [head, 'head'], [helmet, 'head'], [visor, 'head'],
-      [torso, 'torso'], [plate, 'torso'], [pauldronL, 'torso'], [pauldronR, 'torso'],
+      [torso, 'torso'], [plate, 'torso'], [pouch, 'torso'], [pauldronL, 'torso'], [pauldronR, 'torso'],
       [armL, 'limb'], [armR, 'limb'], [legL, 'limb'], [legR, 'limb'],
     ]) {
       m.userData = { bot, part };
@@ -148,8 +152,8 @@ export function createBots(scene, world, random) {
     return bot;
   }
 
-  for (let i = 0; i < 3; i += 1) buildBot('vanguard', i + 1, styles.vanguard.names[i]);
-  for (let i = 0; i < 4; i += 1) buildBot('obsidian', i, styles.obsidian.names[i]);
+  for (let i = 0; i < 4; i += 1) buildBot('vanguard', i + 1, styles.vanguard.names[i]);
+  for (let i = 0; i < 5; i += 1) buildBot('obsidian', i, styles.obsidian.names[i]);
 
   function applyPose(bot) {
     const c = bot.crouch;

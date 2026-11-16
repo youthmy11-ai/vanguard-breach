@@ -27,8 +27,8 @@ export function getZoneName(x, z) {
 
 const v3 = (x, z) => new THREE.Vector3(x, 0, z);
 export const TEAM_SPAWNS = {
-  vanguard: [v3(0, 18.2), v3(-4.2, 18.6), v3(4.2, 18.6), v3(-8, 17.5)],
-  obsidian: [v3(0, -18.2), v3(-4.2, -18.6), v3(4.2, -18.6), v3(8.5, -17.5)],
+  vanguard: [v3(0, 18.2), v3(-4.2, 18.6), v3(4.2, 18.6), v3(-8, 17.5), v3(8, 17.5)],
+  obsidian: [v3(0, -18.2), v3(-4.2, -18.6), v3(4.2, -18.6), v3(8.5, -17.5), v3(-8.5, -17.5)],
 };
 
 export const WAYPOINTS = [
@@ -119,6 +119,8 @@ export function createFoundryMap(scene) {
   for (const [texMap, x, y, z, ry, w, h] of [
     [tex.signA, -9.46, 2.55, -6.2, -Math.PI * 0.5, 2.6, 1.3],
     [tex.signA, -15, 3.2, -21.93, 0, 3, 1.5],
+    [tex.signA, -15, 2.95, -10.65, 0, 2.4, 1.05],
+    [tex.signA, -23.94, 2.8, -5.0, Math.PI * 0.5, 3.0, 1.35],
     [tex.signB, 9.46, 2.55, -6.2, Math.PI * 0.5, 2.6, 1.3],
     [tex.signB, 15, 3.2, -21.93, 0, 3, 1.5],
     [tex.signMid, 0, 4.3, 0.15, 0, 2.8, 1.15],

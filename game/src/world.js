@@ -45,14 +45,30 @@ export function createWorld(scene) {
     () => ({ vel: new THREE.Vector3(), baseScale: 1 }),
   );
 
-  const screenPuffGeom = new THREE.SphereGeometry(0.95, 10, 8);
+  const sCan = document.createElement('canvas');
+  sCan.width = 64; sCan.height = 64;
+  const sCtx = sCan.getContext('2d');
+  const sGrad = sCtx.createRadialGradient(32, 32, 2, 32, 32, 31);
+  sGrad.addColorStop(0, 'rgba(222,232,244,0.52)');
+  sGrad.addColorStop(0.5, 'rgba(196,210,226,0.22)');
+  sGrad.addColorStop(1, 'rgba(180,194,212,0)');
+  sCtx.fillStyle = sGrad; sCtx.fillRect(0, 0, 64, 64);
+  const smokeTex = new THREE.CanvasTexture(sCan);
+
   const smokeScreens = [];
   for (let s = 0; s < SCREENS; s += 1) {
-    const puffs = makePool(
-      PUFFS, screenPuffGeom,
-      (p) => new THREE.MeshLambertMaterial({ color: new THREE.Color(p % 3 === 0 ? '#bac5d4' : p % 3 === 1 ? PALETTE.smoke : '#dce4ee'), transparent: true, opacity: 0, depthWrite: false }),
-      (p) => ({ offset: new THREE.Vector3(), phase: p * 0.85 + s, baseScale: 1 }),
-    );
+    const puffs = [];
+    for (let p = 0; p < PUFFS; p += 1) {
+      const mat = new THREE.SpriteMaterial({
+        map: smokeTex,
+        color: new THREE.Color(p % 3 === 0 ? '#bac5d4' : p % 3 === 1 ? PALETTE.smoke : '#dce4ee'),
+        transparent: true, opacity: 0, depthWrite: false,
+      });
+      const mesh = new THREE.Sprite(mat);
+      mesh.visible = false;
+      scene.add(mesh);
+      puffs.push({ mesh, mat, offset: new THREE.Vector3(), phase: p * 0.85 + s, baseScale: 1 });
+    }
     smokeScreens.push({ active: false, center: new THREE.Vector3(), radius: 3.25, life: 0, maxLife: 14, puffs });
   }
 
@@ -185,7 +201,7 @@ export function createWorld(scene) {
         continue;
       }
       const grow = Math.min(1, (s.maxLife - s.life) / 0.55);
-      const alpha = 0.68 * grow * (s.life < 2.2 ? s.life / 2.2 : 1);
+      const alpha = 0.34 * grow * (s.life < 2.2 ? s.life / 2.2 : 1);
       for (let j = 0; j < PUFFS; j += 1) {
         const pf = s.puffs[j];
         pf.mesh.position.set(
@@ -193,7 +209,7 @@ export function createWorld(scene) {
           s.center.y + pf.offset.y + Math.cos(time * 0.7 + pf.phase) * 0.1,
           s.center.z + pf.offset.z,
         );
-        pf.mesh.scale.setScalar(pf.baseScale * (0.45 + 0.58 * grow));
+        pf.mesh.scale.setScalar(pf.baseScale * (1.85 + 0.85 * grow));
         pf.mat.opacity = alpha;
       }
     }

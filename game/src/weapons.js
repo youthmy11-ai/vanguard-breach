@@ -23,8 +23,8 @@ export function createWeaponRig(camera) {
     dark: new THREE.MeshStandardMaterial({ color: new THREE.Color('#2d3748'), roughness: 0.42, metalness: 0.58 }),
     gun: new THREE.MeshStandardMaterial({ color: new THREE.Color('#64748b'), roughness: 0.32, metalness: 0.65 }),
     poly: new THREE.MeshStandardMaterial({ color: new THREE.Color('#1e2633'), roughness: 0.72, metalness: 0.16 }),
-    sleeve: new THREE.MeshStandardMaterial({ color: new THREE.Color('#293f56'), roughness: 0.76, metalness: 0.08 }),
-    glove: new THREE.MeshStandardMaterial({ color: new THREE.Color('#1a202c'), roughness: 0.64, metalness: 0.14 }),
+    sleeve: new THREE.MeshStandardMaterial({ color: new THREE.Color('#1f2f42'), roughness: 0.92, metalness: 0.02 }),
+    glove: new THREE.MeshStandardMaterial({ color: new THREE.Color('#141923'), roughness: 0.78, metalness: 0.08 }),
     knuckle: new THREE.MeshStandardMaterial({ color: new THREE.Color('#3a4759'), roughness: 0.48, metalness: 0.32 }),
     cyan: new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.vanguard) }),
     amber: new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.accent) }),
@@ -49,19 +49,26 @@ export function createWeaponRig(camera) {
   }
 
   const rightArm = addParts(new THREE.Group(), [
-    [0.068, 0.072, 0.072, 0, 0, 0, 'glove'],
-    [0.072, 0.022, 0.042, 0, 0.032, -0.008, 'knuckle'],
-    [0.024, 0.036, 0.048, -0.038, 0.018, -0.015, 'glove'],
-    [0.078, 0.076, 0.24, 0.02, -0.045, 0.14, 'sleeve'],
-    [0.082, 0.08, 0.028, 0.012, -0.02, 0.045, 'knuckle'],
+    [0.056, 0.058, 0.062, 0, 0, 0, 'glove'],
+    [0.058, 0.018, 0.036, 0, 0.026, -0.008, 'knuckle'],
+    [0.02, 0.03, 0.042, -0.032, 0.014, -0.012, 'glove'],
+    [0.06, 0.058, 0.022, 0.008, -0.014, 0.038, 'knuckle'],
   ]);
+  const rightSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.034, 0.18, 10), m.sleeve);
+  rightSleeve.rotation.x = Math.PI * 0.5;
+  rightSleeve.position.set(0.012, -0.022, 0.12);
+  rightArm.add(rightSleeve);
+
   const leftArm = addParts(new THREE.Group(), [
-    [0.066, 0.064, 0.074, 0, 0, 0, 'glove'],
-    [0.07, 0.018, 0.04, 0, -0.024, -0.01, 'knuckle'],
-    [0.024, 0.034, 0.046, 0.038, 0.016, -0.014, 'glove'],
-    [0.078, 0.076, 0.28, -0.11, -0.07, 0.15, 'sleeve'],
-    [0.082, 0.08, 0.028, -0.04, -0.03, 0.05, 'knuckle'],
+    [0.054, 0.052, 0.062, 0, 0, 0, 'glove'],
+    [0.056, 0.016, 0.034, 0, -0.02, -0.008, 'knuckle'],
+    [0.02, 0.028, 0.04, 0.032, 0.012, -0.012, 'glove'],
+    [0.058, 0.056, 0.022, -0.012, -0.014, 0.038, 'knuckle'],
   ]);
+  const leftSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.033, 0.16, 10), m.sleeve);
+  leftSleeve.rotation.x = Math.PI * 0.5;
+  leftSleeve.position.set(-0.018, -0.02, 0.11);
+  leftArm.add(leftSleeve);
   rig.add(rightArm, leftArm);
 
   const models = {
@@ -184,8 +191,8 @@ export function createWeaponRig(camera) {
   flash.visible = false;
   rig.add(flash);
 
-  const flashLight = new THREE.PointLight(new THREE.Color(PALETTE.accent), 0, 5.5);
-  flashLight.position.set(0.24, -0.16, -0.68);
+  const flashLight = new THREE.PointLight(new THREE.Color('#ffdf9e'), 0, 6.0);
+  flashLight.position.set(0.24, -0.14, -1.25);
   camera.add(flashLight);
 
   const muzzleTip = new THREE.Object3D();
@@ -210,15 +217,15 @@ export function createWeaponRig(camera) {
     flash.position.set(0, 0.025, zTip);
     muzzleTip.position.set(0, 0.025, zTip);
     if (id === 'pistol' || id === 'deagle') {
-      rightArm.position.set(0.01, -0.07, 0.07); rightArm.rotation.set(0.14, 0.08, 0);
-      leftArm.position.set(-0.04, -0.09, 0.06); leftArm.rotation.set(0.18, -0.32, 0.25);
+      rightArm.position.set(0.008, -0.068, 0.065); rightArm.rotation.set(0.1, 0.04, 0);
+      leftArm.position.set(-0.022, -0.082, 0.055); leftArm.rotation.set(0.12, -0.18, 0.16);
       leftArm.visible = true;
     } else if (id === 'knife') {
-      rightArm.position.set(0.01, -0.06, 0.07); rightArm.rotation.set(0.24, 0.16, -0.3);
+      rightArm.position.set(0.01, -0.06, 0.07); rightArm.rotation.set(0.2, 0.12, -0.26);
       leftArm.visible = false;
     } else {
-      rightArm.position.set(0.015, -0.065, 0.12); rightArm.rotation.set(0.12, 0.08, 0);
-      leftArm.position.set(-0.032, -0.055, id === 'smg' ? -0.14 : -0.23); leftArm.rotation.set(0.1, -0.42, 0.2);
+      rightArm.position.set(0.01, -0.068, 0.1); rightArm.rotation.set(0.08, 0.04, 0);
+      leftArm.position.set(-0.018, -0.052, id === 'smg' ? -0.14 : -0.23); leftArm.rotation.set(0.06, -0.2, 0.12);
       leftArm.visible = true;
     }
   }
@@ -321,7 +328,7 @@ export function createWeaponRig(camera) {
       flash.scale.setScalar(0.68 + fRatio * 0.34);
       flashMat.opacity = 0.88 * fRatio;
     }
-    flashLight.intensity = flash.visible ? 11 : 0;
+    flashLight.intensity = flash.visible ? 4.2 : 0;
 
     const targetFov = 74 + (spec.adsFov - 74) * state.adsBlend;
     if (Math.abs(camera.fov - targetFov) > 0.05) {
