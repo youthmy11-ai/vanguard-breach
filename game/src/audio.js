@@ -18,7 +18,7 @@ export function createAudio() {
     return ctx;
   }
 
-  function playNoise(duration, filterFreq, q, gainVal, type = 'bandpass', startGain = gainVal) {
+  function playNoise(duration, filterFreq, q, gainVal, type = 'bandpass') {
     const c = ensureContext();
     if (!c || !noiseBuffer) return;
     const now = c.currentTime;
@@ -29,7 +29,7 @@ export function createAudio() {
     filter.frequency.setValueAtTime(filterFreq, now);
     filter.Q.setValueAtTime(q, now);
     const gain = c.createGain();
-    gain.gain.setValueAtTime(startGain, now);
+    gain.gain.setValueAtTime(gainVal, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
     src.connect(filter);
     filter.connect(gain);
@@ -56,26 +56,27 @@ export function createAudio() {
   }
 
   return {
-    unlock() {
-      ensureContext();
-    },
+    unlock() { ensureContext(); },
     shot(weaponId, volumeScale = 1) {
       if (weaponId === 'knife') {
         playNoise(0.08, 2200, 1.4, 0.12 * volumeScale, 'highpass');
-        return;
-      }
-      if (weaponId === 'pistol') {
-        playNoise(0.11, 1600, 0.9, 0.28 * volumeScale, 'bandpass');
+      } else if (weaponId === 'pistol') {
+        playNoise(0.11, 1600, 0.9, 0.28 * volumeScale);
         playTone(210, 55, 0.08, 'triangle', 0.22 * volumeScale);
+      } else if (weaponId === 'deagle') {
+        playNoise(0.16, 1200, 0.8, 0.36 * volumeScale);
+        playTone(175, 42, 0.14, 'sawtooth', 0.26 * volumeScale);
+      } else if (weaponId === 'shotgun') {
+        playNoise(0.28, 720, 0.6, 0.44 * volumeScale, 'lowpass');
+        playTone(135, 32, 0.22, 'sawtooth', 0.32 * volumeScale);
       } else if (weaponId === 'smg') {
-        playNoise(0.08, 2100, 1.1, 0.22 * volumeScale, 'bandpass');
+        playNoise(0.08, 2100, 1.1, 0.22 * volumeScale);
         playTone(170, 62, 0.06, 'sawtooth', 0.14 * volumeScale);
       } else if (weaponId === 'sniper') {
         playNoise(0.32, 950, 0.6, 0.44 * volumeScale, 'lowpass');
         playTone(165, 34, 0.26, 'sawtooth', 0.32 * volumeScale);
       } else {
-        // rifle
-        playNoise(0.15, 1300, 0.8, 0.34 * volumeScale, 'bandpass');
+        playNoise(0.15, 1300, 0.8, 0.34 * volumeScale);
         playTone(190, 48, 0.12, 'sawtooth', 0.24 * volumeScale);
       }
     },
@@ -109,16 +110,24 @@ export function createAudio() {
         playTone(95, 22, 0.65, 'sawtooth', 0.35);
       }
     },
-    explosion() {
-      playNoise(0.55, 620, 0.55, 0.45, 'lowpass');
-      playTone(110, 26, 0.45, 'sawtooth', 0.3);
+    explosion(kind = 'frag') {
+      if (kind === 'smoke') {
+        playNoise(0.65, 1900, 0.8, 0.22, 'highpass');
+      } else if (kind === 'flash') {
+        playNoise(0.22, 2600, 0.7, 0.34, 'bandpass');
+        playTone(3400, 2900, 0.35, 'sine', 0.1);
+      } else {
+        playNoise(0.55, 620, 0.55, 0.45, 'lowpass');
+        playTone(110, 26, 0.45, 'sawtooth', 0.3);
+      }
+    },
+    radio() {
+      playTone(1120, 1380, 0.04, 'sine', 0.045);
     },
     ui(kind) {
-      if (kind === 'buy') {
-        playTone(520, 780, 0.07, 'triangle', 0.11);
-      } else if (kind === 'deny') {
-        playTone(210, 150, 0.09, 'sawtooth', 0.09);
-      } else if (kind === 'win') {
+      if (kind === 'buy') playTone(520, 780, 0.07, 'triangle', 0.11);
+      else if (kind === 'deny') playTone(210, 150, 0.09, 'sawtooth', 0.09);
+      else if (kind === 'win') {
         playTone(523, 523, 0.12, 'triangle', 0.14, 0);
         playTone(659, 659, 0.14, 'triangle', 0.14, 0.11);
         playTone(784, 987, 0.24, 'triangle', 0.16, 0.22);

@@ -1,4 +1,4 @@
-// Player physics, smooth AABB wall/crate sliding, step-up climbing, health/armor & footsteps.
+// Player physics, smooth AABB wall/crate sliding, step-up climbing, vest/helmet armor & defuse kit state.
 import * as THREE from 'three';
 
 const RADIUS = 0.34;
@@ -28,6 +28,8 @@ export function createPlayer(colliders) {
     height: STAND_HEIGHT,
     hp: 100,
     armor: 0,
+    helmet: false,
+    defuseKit: false,
     alive: true,
     punchPitch: 0,
     stepDist: 0,
@@ -52,7 +54,6 @@ export function createPlayer(colliders) {
       player.position[axis] = nextVal;
       return true;
     }
-    // Smooth step-up over low crates / ramp blocks
     const stepTop = hit.max.y;
     if (player.onGround && stepTop > player.position.y && stepTop - player.position.y <= STEP_HEIGHT) {
       if (!overlaps(x, stepTop + 0.01, z, player.height, 0.04)) {
@@ -77,14 +78,18 @@ export function createPlayer(colliders) {
     player.yaw += yawKick;
   }
 
-  function takeDamage(amount) {
+  function takeDamage(amount, isHead = false) {
     if (!player.alive) return { killed: false, dmg: 0 };
+    const headMult = isHead ? (player.helmet ? 0.85 : 1.45) : 1;
+    const raw = amount * headMult;
     let absorbed = 0;
     if (player.armor > 0) {
-      absorbed = Math.min(player.armor, amount * 0.48);
+      const rate = player.helmet ? 0.52 : 0.44;
+      absorbed = Math.min(player.armor, raw * rate);
       player.armor = Math.max(0, Math.round(player.armor - absorbed));
+      if (player.armor === 0) player.helmet = false;
     }
-    const finalDmg = Math.max(1, Math.round(amount - absorbed));
+    const finalDmg = Math.max(1, Math.round(raw - absorbed));
     player.hp = Math.max(0, player.hp - finalDmg);
     player.punchPitch = Math.min(0.14, player.punchPitch + 0.045);
     if (player.hp === 0) player.alive = false;
